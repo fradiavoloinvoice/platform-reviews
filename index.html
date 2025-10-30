@@ -1293,6 +1293,11 @@
 
             const colors = stores.map((_, i) => i < 15 ? '#764ba2' : '#b794d6');
 
+            // Calcola altezza dinamica: 30px per ogni locale + padding
+            const chartHeight = Math.max(400, stores.length * 30);
+            const chartWrapper = document.getElementById('storeChart').parentElement;
+            chartWrapper.style.height = chartHeight + 'px';
+
             const ctx = document.getElementById('storeChart');
             if (charts.store) charts.store.destroy();
             
@@ -1311,10 +1316,37 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Voto Medio: ' + context.parsed.x.toFixed(2) + ' ⭐';
+                                }
+                            }
+                        }
                     },
                     scales: {
-                        x: { beginAtZero: true, max: 5 }
+                        x: { 
+                            beginAtZero: true, 
+                            max: 5,
+                            ticks: {
+                                font: { size: 12 }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: { size: 11 },
+                                autoSkip: false  // Mostra tutti i nomi
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10
+                        }
                     }
                 }
             });
