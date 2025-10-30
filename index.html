@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Recensioni FradiAvolo - Google Apps Script</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background: #4ade80;
+        }
+
+        .status-indicator.loading {
+            background: #fbbf24;
+        }
+
+        .status-indicator.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-btn {
+            background: white;
+            color: #764ba2;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .config-group {
+            margin-bottom: 15px;
+        }
+
+        .config-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .config-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .config-group input:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        .config-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #764ba2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a3780;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .filters-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 3px solid #764ba2;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .filter-header h2 {
+            color: #764ba2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-content {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .filter-content.active {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .filter-group h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .filter-options {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .filter-option:hover {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .filter-option input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .filter-controls button {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid #764ba2;
+            background: white;
+            color: #764ba2;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .filter-controls button:hover {
+            background: #764ba2;
+            color: white;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .filter-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .apply-filters {
+            background: #764ba2;
+            color: white;
+        }
+
+        .apply-filters:hover {
+            background: #5a3780;
+        }
+
+        .reset-filters {
+            background: #6c757d;
+            color: white;
+        }
+
+        .reset-filters:hover {
+            background: #545b62;
+        }
+
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: white;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .kpi-title {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .kpi-value {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .charts-section {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            color: #764ba2;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-container.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-container.full-width .chart-wrapper {
+            height: 400px;
+        }
+
+        .trend-selector {
+            margin-bottom: 15px;
+        }
+
+        .trend-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #764ba2;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .table-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .table-controls input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            border: 1px solid #764ba2;
+            background: white;
+            color: #764ba2;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #764ba2;
+            color: white;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stars {
+            color: #fbbf24;
+        }
+
+        .text-preview {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .text-preview.expanded {
+            white-space: normal;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+            border-left: 5px solid #c00;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+            border-left: 5px solid #4caf50;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .kpi-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Caricamento dati...</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🍕 Dashboard Recensioni FradiAvolo</h1>
+            <div class="header-info">
+                <div class="connection-status">
+                    <div class="status-indicator loading" id="statusIndicator"></div>
+                    <span id="statusText">Pronto per configurazione</span>
+                </div>
+                <button class="refresh-btn" id="refreshBtn" onclick="loadDataFromScript()">
+                    <span>🔄</span>
+                    <span>Aggiorna Dati</span>
+                </button>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9em;" id="lastUpdate"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <!-- Filtri -->
+        <div class="filters-section">
+            <div class="filter-header" onclick="toggleFilters()">
+                <h2>🔍 Filtri</h2>
+                <span id="filterToggle">▼</span>
+            </div>
+            <div class="filter-content" id="filterContent">
+                <div class="filter-group">
+                    <h3>📋 Topic</h3>
+                    <div class="filter-controls">
+                        <button onclick="selectAll('topic')">Tutti</button>
+                        <button onclick="selectNone('topic')">Nessuno</button>
+                    </div>
+                    <div class="filter-options" id="topicFilters"></div>
+                </div>
+
+                <div class="filter-group">
+                    <h3>🏪 Punto Vendita</h3>
+                    <div class="filter-controls">
+                        <button onclick="selectAll('store')">Tutti</button>
+                        <button onclick="selectNone('store')">Nessuno</button>
+                    </div>
+                    <div class="filter-options" id="storeFilters"></div>
+                </div>
+
+                <div class="filter-group">
+                    <h3>📅 Settimana</h3>
+                    <div class="filter-controls">
+                        <button onclick="selectAll('week')">Tutte</button>
+                        <button onclick="selectNone('week')">Nessuna</button>
+                    </div>
+                    <div class="filter-options" id="weekFilters"></div>
+                </div>
+
+                <div class="filter-group">
+                    <h3>📱 Piattaforma</h3>
+                    <div class="filter-controls">
+                        <button onclick="selectAll('platform')">Tutte</button>
+                        <button onclick="selectNone('platform')">Nessuna</button>
+                    </div>
+                    <div class="filter-options" id="platformFilters"></div>
+                </div>
+
+                <div class="filter-group">
+                    <h3>⭐ Voto</h3>
+                    <div class="filter-controls">
+                        <button onclick="selectAll('rating')">Tutti</button>
+                        <button onclick="selectNone('rating')">Nessuno</button>
+                    </div>
+                    <div class="filter-options" id="ratingFilters"></div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="apply-filters" onclick="applyFilters()">✓ Applica Filtri</button>
+                    <button class="reset-filters" onclick="resetFilters()">↺ Reset Filtri</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI -->
+        <div class="kpi-section" id="kpiSection"></div>
+
+        <!-- Grafici -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>📊 Distribuzione per Topic</h3>
+                <div class="chart-wrapper">
+                    <canvas id="topicChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>⭐ Distribuzione Voti</h3>
+                <div class="chart-wrapper">
+                    <canvas id="ratingChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container full-width">
+                <h3>🏪 Voto Medio per Punto Vendita</h3>
+                <div class="chart-wrapper">
+                    <canvas id="storeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container full-width">
+                <h3>📈 Trend Temporale</h3>
+                <div class="trend-selector">
+                    <select id="trendSelector" onchange="updateTrendChart()">
+                        <option value="total">Totale - Recensioni + Voto Medio</option>
+                        <option value="Qualità Prodotto">Qualità Prodotto - Recensioni + Voto</option>
+                        <option value="Servizio">Servizio - Recensioni + Voto</option>
+                        <option value="Prezzo">Prezzo - Recensioni + Voto</option>
+                        <option value="Location/Ambiente">Location/Ambiente - Recensioni + Voto</option>
+                        <option value="Pulizia/Igiene">Pulizia/Igiene - Recensioni + Voto</option>
+                    </select>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📊 Voto Medio per Topic</h3>
+                <div class="chart-wrapper">
+                    <canvas id="topicRatingChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📱 Recensioni per Piattaforma</h3>
+                <div class="chart-wrapper">
+                    <canvas id="platformChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabella Recensioni -->
+        <div class="table-section">
+            <h2 style="color: #764ba2; margin-bottom: 20px;">📋 Recensioni Dettagliate</h2>
+            <div class="table-controls">
+                <input type="text" id="searchInput" placeholder="🔍 Cerca nel testo delle recensioni..." onkeyup="filterTable()">
+            </div>
+            <div class="table-container">
+                <table id="reviewsTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Punto Vendita</th>
+                            <th>Voto</th>
+                            <th>Topic</th>
+                            <th>Testo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <button onclick="previousPage()" id="prevBtn">← Precedente</button>
+                <span id="pageInfo"></span>
+                <button onclick="nextPage()" id="nextBtn">Successiva →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL HARDCODED - Non visibile all'utente
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTWZTogMQk5ORruYq8PXn5KC_vEZwxF9T_lq7zc3-3-CnFBV22SgrHrltfa2yAjpoH/exec';
+        
+        // Variabili globali
+        let allData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let charts = {};
+
+        // Carica dati all'avvio
+        window.addEventListener('load', () => {
+            loadDataFromScript();
+        });
+
+        function loadDataFromScript() {
+            showLoading(true);
+            updateStatus('loading', 'Caricamento in corso...');
+            hideError();
+            hideSuccess();
+
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+
+            // Fetch JSON da Google Apps Script
+            fetch(SCRIPT_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dati ricevuti:', data);
+                    
+                    if (!Array.isArray(data) || data.length === 0) {
+                        throw new Error('Nessun dato ricevuto dal foglio');
+                    }
+
+                    allData = processData(data);
+                    
+                    if (allData.length === 0) {
+                        throw new Error('I dati ricevuti non sono nel formato corretto');
+                    }
+                    
+                    filteredData = [...allData];
+                    
+                    initializeFilters();
+                    resetFilters();
+                    applyFilters();
+                    
+                    updateStatus('connected', `${allData.length} recensioni caricate`);
+                    document.getElementById('lastUpdate').textContent = 
+                        `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+                    
+                    showSuccess(`✅ Dashboard aggiornata! ${allData.length} recensioni caricate.`);
+                    showLoading(false);
+                    refreshBtn.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Errore caricamento:', error);
+                    showError(`❌ Errore nel caricamento dei dati: ${error.message}`);
+                    updateStatus('error', 'Errore caricamento');
+                    showLoading(false);
+                    refreshBtn.disabled = false;
+                });
+        }
+
+        function processData(data) {
+            return data.map(row => ({
+                Data: formatDate(row.Data || row.data || ''),
+                Week: parseInt(row.Week || row.week || 0),
+                'Punto vendita': row['Punto vendita'] || row.punto_vendita || row.store || '',
+                sourceFrom: row.sourceFrom || row.sourcefrom || row.source || '',
+                voto: parseInt(row.voto || row.rating || 0),
+                testo: row.testo || row.text || row.recensione || '',
+                TOPIC: row.TOPIC || row.topic || 'NESSUN TESTO'
+            })).filter(row => row.voto > 0 && row['Punto vendita']); // Rimuovi righe invalide
+        }
+
+        function formatDate(dateValue) {
+            if (!dateValue) return '';
+            
+            // Se è già una stringa formattata, restituiscila
+            if (typeof dateValue === 'string' && dateValue.includes('/')) {
+                return dateValue;
+            }
+            
+            // Se è un numero (serial date di Google Sheets)
+            if (typeof dateValue === 'number') {
+                const date = new Date((dateValue - 25569) * 86400 * 1000);
+                return date.toLocaleDateString('it-IT');
+            }
+            
+            // Prova a parsare come data
+            const date = new Date(dateValue);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString('it-IT');
+            }
+            
+            return dateValue;
+        }
+
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            indicator.className = `status-indicator ${status}`;
+            statusText.textContent = text;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 10000);
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.add('active');
+            
+            setTimeout(() => {
+                successDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        function hideSuccess() {
+            document.getElementById('successMessage').classList.remove('active');
+        }
+
+        function initializeFilters() {
+            const topics = [...new Set(allData.map(d => d.TOPIC))].sort();
+            const stores = [...new Set(allData.map(d => d['Punto vendita']))].sort();
+            const weeks = [...new Set(allData.map(d => d.Week))].sort((a, b) => a - b);
+            const platforms = [...new Set(allData.map(d => d.sourceFrom))].sort();
+            const ratings = [1, 2, 3, 4, 5];
+
+            createFilterCheckboxes('topicFilters', topics, 'topic');
+            createFilterCheckboxes('storeFilters', stores, 'store');
+            createFilterCheckboxes('weekFilters', weeks, 'week');
+            createFilterCheckboxes('platformFilters', platforms, 'platform');
+            createFilterCheckboxes('ratingFilters', ratings, 'rating');
+        }
+
+        function createFilterCheckboxes(containerId, items, filterType) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = items.map(item => `
+                <div class="filter-option">
+                    <input type="checkbox" id="${filterType}_${item}" value="${item}" checked>
+                    <label for="${filterType}_${item}">${item} (${countItems(filterType, item)})</label>
+                </div>
+            `).join('');
+        }
+
+        function countItems(filterType, value) {
+            const fieldMap = {
+                'topic': 'TOPIC',
+                'store': 'Punto vendita',
+                'week': 'Week',
+                'platform': 'sourceFrom',
+                'rating': 'voto'
+            };
+            const field = fieldMap[filterType];
+            return allData.filter(d => d[field] == value).length;
+        }
+
+        function selectAll(filterType) {
+            document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]`).forEach(cb => cb.checked = true);
+        }
+
+        function selectNone(filterType) {
+            document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]`).forEach(cb => cb.checked = false);
+        }
+
+        function toggleFilters() {
+            const content = document.getElementById('filterContent');
+            const toggle = document.getElementById('filterToggle');
+            content.classList.toggle('active');
+            toggle.textContent = content.classList.contains('active') ? '▲' : '▼';
+        }
+
+        function resetFilters() {
+            ['topic', 'store', 'week', 'platform', 'rating'].forEach(selectAll);
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const selectedTopics = getSelectedValues('topic');
+            const selectedStores = getSelectedValues('store');
+            const selectedWeeks = getSelectedValues('week');
+            const selectedPlatforms = getSelectedValues('platform');
+            const selectedRatings = getSelectedValues('rating');
+
+            filteredData = allData.filter(d => 
+                selectedTopics.includes(d.TOPIC) &&
+                selectedStores.includes(d['Punto vendita']) &&
+                selectedWeeks.includes(String(d.Week)) &&
+                selectedPlatforms.includes(d.sourceFrom) &&
+                selectedRatings.includes(String(d.voto))
+            );
+
+            currentPage = 1;
+            updateDashboard();
+        }
+
+        function getSelectedValues(filterType) {
+            return Array.from(document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]:checked`))
+                .map(cb => cb.value);
+        }
+
+        function updateDashboard() {
+            updateKPIs();
+            updateCharts();
+            updateTable();
+        }
+
+        function updateKPIs() {
+            const total = filteredData.length;
+            const avgRating = total > 0 ? (filteredData.reduce((sum, d) => sum + d.voto, 0) / total).toFixed(2) : '0.00';
+            const positive = filteredData.filter(d => d.voto >= 4).length;
+            const negative = filteredData.filter(d => d.voto <= 2).length;
+
+            document.getElementById('kpiSection').innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-title">Totale Recensioni</div>
+                    <div class="kpi-value">${total.toLocaleString()}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Voto Medio</div>
+                    <div class="kpi-value">${avgRating} ⭐</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Recensioni Positive (4-5★)</div>
+                    <div class="kpi-value">${positive.toLocaleString()}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Recensioni Negative (1-2★)</div>
+                    <div class="kpi-value">${negative.toLocaleString()}</div>
+                </div>
+            `;
+        }
+
+        function updateCharts() {
+            updateTopicChart();
+            updateRatingChart();
+            updateStoreChart();
+            updateTrendChart();
+            updateTopicRatingChart();
+            updatePlatformChart();
+        }
+
+        function updateTopicChart() {
+            const topicCounts = {};
+            filteredData.forEach(d => {
+                topicCounts[d.TOPIC] = (topicCounts[d.TOPIC] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('topicChart');
+            if (charts.topic) charts.topic.destroy();
+            
+            charts.topic = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(topicCounts),
+                    datasets: [{
+                        data: Object.values(topicCounts),
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function updateRatingChart() {
+            const ratingCounts = [1, 2, 3, 4, 5].map(r => 
+                filteredData.filter(d => d.voto === r).length
+            );
+
+            const ctx = document.getElementById('ratingChart');
+            if (charts.rating) charts.rating.destroy();
+            
+            charts.rating = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
+                    datasets: [{
+                        label: 'Numero Recensioni',
+                        data: ratingCounts,
+                        backgroundColor: '#764ba2'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function updateStoreChart() {
+            const storeData = {};
+            filteredData.forEach(d => {
+                if (!storeData[d['Punto vendita']]) {
+                    storeData[d['Punto vendita']] = { total: 0, sum: 0 };
+                }
+                storeData[d['Punto vendita']].total++;
+                storeData[d['Punto vendita']].sum += d.voto;
+            });
+
+            const stores = Object.keys(storeData).map(store => ({
+                name: store,
+                avg: storeData[store].sum / storeData[store].total
+            })).sort((a, b) => b.avg - a.avg);
+
+            const colors = stores.map((_, i) => i < 15 ? '#764ba2' : '#b794d6');
+
+            const ctx = document.getElementById('storeChart');
+            if (charts.store) charts.store.destroy();
+            
+            charts.store = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stores.map(s => s.name),
+                    datasets: [{
+                        label: 'Voto Medio',
+                        data: stores.map(s => s.avg),
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, max: 5 }
+                    }
+                }
+            });
+        }
+
+        function updateTrendChart() {
+            const selector = document.getElementById('trendSelector').value;
+            const data = selector === 'total' 
+                ? filteredData 
+                : filteredData.filter(d => d.TOPIC === selector);
+
+            const weekData = {};
+            data.forEach(d => {
+                if (!weekData[d.Week]) {
+                    weekData[d.Week] = { count: 0, sum: 0 };
+                }
+                weekData[d.Week].count++;
+                weekData[d.Week].sum += d.voto;
+            });
+
+            const weeks = Object.keys(weekData).sort((a, b) => a - b);
+            const counts = weeks.map(w => weekData[w].count);
+            const avgs = weeks.map(w => weekData[w].sum / weekData[w].count);
+
+            const ctx = document.getElementById('trendChart');
+            if (charts.trend) charts.trend.destroy();
+            
+            charts.trend = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weeks.map(w => `W${w}`),
+                    datasets: [{
+                        label: 'Numero Recensioni',
+                        data: counts,
+                        backgroundColor: 'rgba(102, 126, 234, 0.5)',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Voto Medio',
+                        data: avgs,
+                        type: 'line',
+                        borderColor: '#f093fb',
+                        backgroundColor: 'transparent',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, position: 'left' },
+                        y1: { beginAtZero: true, max: 5, position: 'right' }
+                    }
+                }
+            });
+        }
+
+        function updateTopicRatingChart() {
+            const topics = [...new Set(filteredData.map(d => d.TOPIC))];
+            const avgs = topics.map(topic => {
+                const data = filteredData.filter(d => d.TOPIC === topic);
+                return data.length > 0 ? data.reduce((sum, d) => sum + d.voto, 0) / data.length : 0;
+            });
+
+            const ctx = document.getElementById('topicRatingChart');
+            if (charts.topicRating) charts.topicRating.destroy();
+            
+            charts.topicRating = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topics,
+                    datasets: [{
+                        label: 'Voto Medio',
+                        data: avgs,
+                        backgroundColor: '#764ba2'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 5 }
+                    }
+                }
+            });
+        }
+
+        function updatePlatformChart() {
+            const platformCounts = {};
+            filteredData.forEach(d => {
+                platformCounts[d.sourceFrom] = (platformCounts[d.sourceFrom] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('platformChart');
+            if (charts.platform) charts.platform.destroy();
+            
+            charts.platform = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(platformCounts),
+                    datasets: [{
+                        data: Object.values(platformCounts),
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const displayData = filteredData.filter(d => 
+                d.testo.toLowerCase().includes(searchTerm)
+            );
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = displayData.slice(start, end);
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = pageData.map(d => `
+                <tr>
+                    <td>${d.Data}</td>
+                    <td>${d['Punto vendita']}</td>
+                    <td><span class="stars">${'⭐'.repeat(d.voto)}</span></td>
+                    <td>${d.TOPIC}</td>
+                    <td><div class="text-preview" onclick="this.classList.toggle('expanded')">${d.testo || 'Nessun testo'}</div></td>
+                </tr>
+            `).join('');
+
+            const totalPages = Math.ceil(displayData.length / rowsPerPage);
+            document.getElementById('pageInfo').textContent = `Pagina ${currentPage} di ${totalPages || 1} (${displayData.length} recensioni)`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function filterTable() {
+            currentPage = 1;
+            updateTable();
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        }
+
+        function nextPage() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const displayData = filteredData.filter(d => 
+                d.testo.toLowerCase().includes(searchTerm)
+            );
+            const totalPages = Math.ceil(displayData.length / rowsPerPage);
+            
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        }
+    </script>
+</body>
+</html>
