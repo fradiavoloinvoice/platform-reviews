@@ -19,6 +19,121 @@
             min-height: 100vh;
         }
 
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 30px 20px;
+            }
+        }
+
+        .login-box h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        @media (max-width: 480px) {
+            .login-box h1 {
+                font-size: 24px;
+            }
+        }
+
+        .login-box p {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-login {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .error-message-login {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message-login.show {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .lock-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -26,6 +141,11 @@
             border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
+            display: none;
+        }
+
+        .container.authenticated {
+            display: block;
         }
 
         .header {
@@ -34,6 +154,32 @@
             padding: 30px;
             text-align: center;
             position: relative;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        @media (max-width: 480px) {
+            .btn-logout {
+                position: static;
+                display: block;
+                margin: 15px auto 0;
+            }
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .header h1 {
@@ -575,6 +721,24 @@
     </style>
 </head>
 <body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="lock-icon">🔒</div>
+            <h1>Dashboard FradiAvolo</h1>
+            <p>Inserisci la password per accedere</p>
+            <form class="login-form" onsubmit="checkPassword(event)">
+                <div class="input-group">
+                    <input type="password" id="passwordInput" placeholder="Password" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-login">Accedi</button>
+            </form>
+            <div id="errorMessageLogin" class="error-message-login">
+                ❌ Password errata. Riprova.
+            </div>
+        </div>
+    </div>
+
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner">
             <div class="spinner"></div>
@@ -582,8 +746,9 @@
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" id="dashboardContainer">
         <div class="header">
+            <button class="btn-logout" onclick="logout()">🚪 Esci</button>
             <h1>🍕 Dashboard Recensioni Fradiavolo</h1>
             <div class="header-info">
                 <div class="connection-status">
@@ -747,6 +912,9 @@
     </div>
 
     <script>
+        // CONFIGURAZIONE PASSWORD
+        const CORRECT_PASSWORD = '2912A';
+
         // URL HARDCODED - Non visibile all'utente
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTWZTogMQk5ORruYq8PXn5KC_vEZwxF9T_lq7zc3-3-CnFBV22SgrHrltfa2yAjpoH/exec';
         
@@ -757,10 +925,48 @@
         const rowsPerPage = 50;
         let charts = {};
 
-        // Carica dati all'avvio
+        // Controlla se l'utente è già autenticato
         window.addEventListener('load', () => {
-            loadDataFromScript();
+            if (sessionStorage.getItem('authenticated') === 'true') {
+                showDashboard();
+                loadDataFromScript();
+            }
         });
+
+        function checkPassword(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('passwordInput');
+            const errorMsg = document.getElementById('errorMessageLogin');
+            
+            if (input.value === CORRECT_PASSWORD) {
+                // Password corretta
+                sessionStorage.setItem('authenticated', 'true');
+                showDashboard();
+                loadDataFromScript();
+            } else {
+                // Password errata
+                errorMsg.classList.add('show');
+                input.value = '';
+                input.focus();
+                
+                setTimeout(() => {
+                    errorMsg.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboardContainer').classList.add('authenticated');
+        }
+
+        function logout() {
+            if (confirm('Sei sicuro di voler uscire?')) {
+                sessionStorage.removeItem('authenticated');
+                location.reload();
+            }
+        }
 
         function loadDataFromScript() {
             showLoading(true);
