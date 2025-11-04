@@ -499,6 +499,163 @@
             font-weight: bold;
         }
 
+        /* Topic Counter Section */
+        .topic-counter-section {
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 3px solid #764ba2;
+        }
+
+        .topic-counter-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .topic-counter-header h2 {
+            color: #764ba2;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .topic-counter-header p {
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+
+        .topic-counter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .topic-counter-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 5px solid #764ba2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-counter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 0 0 0 100%;
+        }
+
+        .topic-counter-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(118, 75, 162, 0.3);
+        }
+
+        .topic-counter-card.top-1 {
+            border-left-color: #ffd700;
+            background: linear-gradient(135deg, #fff9e6 0%, white 100%);
+        }
+
+        .topic-counter-card.top-2 {
+            border-left-color: #c0c0c0;
+            background: linear-gradient(135deg, #f5f5f5 0%, white 100%);
+        }
+
+        .topic-counter-card.top-3 {
+            border-left-color: #cd7f32;
+            background: linear-gradient(135deg, #fff5e6 0%, white 100%);
+        }
+
+        .topic-rank {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            background: #764ba2;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            z-index: 1;
+        }
+
+        .topic-counter-card.top-1 .topic-rank {
+            background: #ffd700;
+            color: #333;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .topic-counter-card.top-2 .topic-rank {
+            background: #c0c0c0;
+            color: #333;
+        }
+
+        .topic-counter-card.top-3 .topic-rank {
+            background: #cd7f32;
+            color: white;
+        }
+
+        .topic-counter-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-right: 45px;
+        }
+
+        .topic-counter-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .topic-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .topic-stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .topic-stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .topic-stat-value.rating {
+            color: #fbbf24;
+        }
+
+        .topic-stat-divider {
+            width: 1px;
+            height: 40px;
+            background: #e0e0e0;
+            margin: 0 10px;
+        }
+
         .charts-section {
             padding: 30px;
             display: grid;
@@ -717,6 +874,14 @@
             .kpi-section {
                 grid-template-columns: 1fr;
             }
+
+            .topic-counter-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .topic-counter-header h2 {
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
@@ -827,6 +992,15 @@
 
         <!-- KPI -->
         <div class="kpi-section" id="kpiSection"></div>
+
+        <!-- NUOVO: Topic Counter Section -->
+        <div class="topic-counter-section">
+            <div class="topic-counter-header">
+                <h2>🏆 Top Topic per Recensioni</h2>
+                <p>I topic più discussi dai clienti con numero recensioni e voto medio</p>
+            </div>
+            <div class="topic-counter-grid" id="topicCounterGrid"></div>
+        </div>
 
         <!-- Grafici -->
         <div class="charts-section">
@@ -1178,6 +1352,7 @@
 
         function updateDashboard() {
             updateKPIs();
+            updateTopicCounter();
             updateCharts();
             updateTable();
         }
@@ -1206,6 +1381,58 @@
                     <div class="kpi-value">${negative.toLocaleString()}</div>
                 </div>
             `;
+        }
+
+        function updateTopicCounter() {
+            // Calcola statistiche per topic (escludendo "NESSUN TESTO")
+            const topicStats = {};
+            filteredData.forEach(d => {
+                const topic = d.TOPIC;
+                // Escludi "NESSUN TESTO" dal counter
+                if (topic.toUpperCase() === 'NESSUN TESTO') return;
+                
+                if (!topicStats[topic]) {
+                    topicStats[topic] = { count: 0, totalRating: 0 };
+                }
+                topicStats[topic].count++;
+                topicStats[topic].totalRating += d.voto;
+            });
+
+            // Converti in array e calcola media voto
+            const topicsArray = Object.keys(topicStats).map(topic => ({
+                name: topic,
+                count: topicStats[topic].count,
+                avgRating: (topicStats[topic].totalRating / topicStats[topic].count).toFixed(2)
+            }));
+
+            // Ordina per numero recensioni (decrescente)
+            topicsArray.sort((a, b) => b.count - a.count);
+
+            // Prendi i top 6 topic
+            const topTopics = topicsArray.slice(0, 6);
+
+            // Genera HTML
+            const container = document.getElementById('topicCounterGrid');
+            container.innerHTML = topTopics.map((topic, index) => {
+                const rankClass = index === 0 ? 'top-1' : index === 1 ? 'top-2' : index === 2 ? 'top-3' : '';
+                return `
+                    <div class="topic-counter-card ${rankClass}">
+                        <div class="topic-rank">${index + 1}</div>
+                        <div class="topic-counter-name">${topic.name}</div>
+                        <div class="topic-counter-stats">
+                            <div class="topic-stat">
+                                <div class="topic-stat-label">Recensioni</div>
+                                <div class="topic-stat-value">${topic.count}</div>
+                            </div>
+                            <div class="topic-stat-divider"></div>
+                            <div class="topic-stat">
+                                <div class="topic-stat-label">Voto Medio</div>
+                                <div class="topic-stat-value rating">${topic.avgRating} ⭐</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateCharts() {
