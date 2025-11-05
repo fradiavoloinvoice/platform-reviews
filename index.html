@@ -1,1747 +1,951 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Recensioni Fradiavolo - Google Apps Script</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        /* Login Screen */
-        .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-
-        @media (max-width: 480px) {
-            .login-box {
-                padding: 30px 20px;
-            }
-        }
-
-        .login-box h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        @media (max-width: 480px) {
-            .login-box h1 {
-                font-size: 24px;
-            }
-        }
-
-        .login-box p {
-            color: #6c757d;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .input-group {
-            position: relative;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn-login {
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .error-message-login {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .error-message-login.show {
-            display: block;
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .lock-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            display: none;
-        }
-
-        .container.authenticated {
-            display: block;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-        }
-
-        .btn-logout {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-
-        @media (max-width: 480px) {
-            .btn-logout {
-                position: static;
-                display: block;
-                margin: 15px auto 0;
-            }
-        }
-
-        .btn-logout:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .header-info {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        .status-indicator.connected {
-            background: #4ade80;
-        }
-
-        .status-indicator.loading {
-            background: #fbbf24;
-        }
-
-        .status-indicator.error {
-            background: #ef4444;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .refresh-btn {
-            background: white;
-            color: #764ba2;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .refresh-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .refresh-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .config-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .config-group {
-            margin-bottom: 15px;
-        }
-
-        .config-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .config-group input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.9em;
-        }
-
-        .config-group input:focus {
-            outline: none;
-            border-color: #764ba2;
-        }
-
-        .config-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #764ba2;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a3780;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 5px;
-        }
-
-        .info-box h4 {
-            color: #1976d2;
-            margin-bottom: 8px;
-        }
-
-        .info-box p {
-            color: #555;
-            font-size: 0.9em;
-            line-height: 1.5;
-        }
-
-        .filters-section {
-            padding: 20px;
-            background: #f8f9fa;
-            border-bottom: 3px solid #764ba2;
-        }
-
-        .filter-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .filter-header h2 {
-            color: #764ba2;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-content {
-            margin-top: 15px;
-            display: none;
-        }
-
-        .filter-content.active {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .filter-group {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .filter-group h3 {
-            color: #764ba2;
-            margin-bottom: 10px;
-            font-size: 1em;
-        }
-
-        .filter-options {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 10px;
-        }
-
-        .filter-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        .filter-option:hover {
-            background: #f0f0f0;
-            border-radius: 3px;
-        }
-
-        .filter-option input[type="checkbox"] {
-            cursor: pointer;
-        }
-
-        .filter-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .filter-controls button {
-            flex: 1;
-            padding: 5px 10px;
-            border: 1px solid #764ba2;
-            background: white;
-            color: #764ba2;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.85em;
-            transition: all 0.3s;
-        }
-
-        .filter-controls button:hover {
-            background: #764ba2;
-            color: white;
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .filter-actions button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .apply-filters {
-            background: #764ba2;
-            color: white;
-        }
-
-        .apply-filters:hover {
-            background: #5a3780;
-        }
-
-        .reset-filters {
-            background: #6c757d;
-            color: white;
-        }
-
-        .reset-filters:hover {
-            background: #545b62;
-        }
-
-        .kpi-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: white;
-        }
-
-        .kpi-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-
-        .kpi-title {
-            font-size: 0.9em;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }
-
-        .kpi-value {
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-
-        /* Topic Counter Section */
-        .topic-counter-section {
-            padding: 30px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-bottom: 3px solid #764ba2;
-        }
-
-        .topic-counter-header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .topic-counter-header h2 {
-            color: #764ba2;
-            font-size: 1.8em;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .topic-counter-header p {
-            color: #6c757d;
-            font-size: 0.95em;
-        }
-
-        .topic-counter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .topic-counter-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            border-left: 5px solid #764ba2;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .topic-counter-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            border-radius: 0 0 0 100%;
-        }
-
-        .topic-counter-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(118, 75, 162, 0.3);
-        }
-
-        .topic-counter-card.top-1 {
-            border-left-color: #ffd700;
-            background: linear-gradient(135deg, #fff9e6 0%, white 100%);
-        }
-
-        .topic-counter-card.top-2 {
-            border-left-color: #c0c0c0;
-            background: linear-gradient(135deg, #f5f5f5 0%, white 100%);
-        }
-
-        .topic-counter-card.top-3 {
-            border-left-color: #cd7f32;
-            background: linear-gradient(135deg, #fff5e6 0%, white 100%);
-        }
-
-        .topic-rank {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 35px;
-            height: 35px;
-            background: #764ba2;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.1em;
-            z-index: 1;
-        }
-
-        .topic-counter-card.top-1 .topic-rank {
-            background: #ffd700;
-            color: #333;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-        }
-
-        .topic-counter-card.top-2 .topic-rank {
-            background: #c0c0c0;
-            color: #333;
-        }
-
-        .topic-counter-card.top-3 .topic-rank {
-            background: #cd7f32;
-            color: white;
-        }
-
-        .topic-counter-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 15px;
-            padding-right: 45px;
-        }
-
-        .topic-counter-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #e0e0e0;
-        }
-
-        .topic-stat {
-            text-align: center;
-            flex: 1;
-        }
-
-        .topic-stat-label {
-            font-size: 0.85em;
-            color: #6c757d;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .topic-stat-value {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #764ba2;
-        }
-
-        .topic-stat-value.rating {
-            color: #fbbf24;
-        }
-
-        .topic-stat-divider {
-            width: 1px;
-            height: 40px;
-            background: #e0e0e0;
-            margin: 0 10px;
-        }
-
-        .charts-section {
-            padding: 30px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
-        }
-
-        .chart-container {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .chart-container h3 {
-            color: #764ba2;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 300px;
-        }
-
-        .chart-container.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .chart-container.full-width .chart-wrapper {
-            height: 400px;
-        }
-
-        .trend-selector {
-            margin-bottom: 15px;
-        }
-
-        .trend-selector select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #764ba2;
-            border-radius: 8px;
-            font-size: 0.9em;
-            cursor: pointer;
-        }
-
-        .table-section {
-            padding: 30px;
-            background: #f8f9fa;
-        }
-
-        .table-controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .table-controls input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 0.9em;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        th {
-            padding: 15px;
-            text-align: left;
-            font-weight: bold;
-        }
-
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            padding: 20px;
-        }
-
-        .pagination button {
-            padding: 8px 15px;
-            border: 1px solid #764ba2;
-            background: white;
-            color: #764ba2;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            background: #764ba2;
-            color: white;
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .stars {
-            color: #fbbf24;
-        }
-
-        .text-preview {
-            max-width: 400px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-
-        .text-preview.expanded {
-            white-space: normal;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-spinner {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #764ba2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            background: #fee;
-            color: #c00;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px;
-            border-left: 5px solid #c00;
-            display: none;
-        }
-
-        .error-message.active {
-            display: block;
-        }
-
-        .success-message {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px;
-            border-left: 5px solid #4caf50;
-            display: none;
-        }
-
-        .success-message.active {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
-            
-            .kpi-section {
-                grid-template-columns: 1fr;
-            }
-
-            .topic-counter-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .topic-counter-header h2 {
-                font-size: 1.5em;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Recensioni Fradiavolo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Segoe UI,Tahoma,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+
+    /* Tabs + subheader */
+    .tabbar{display:none;gap:8px;max-width:1400px;margin:0 auto 8px}
+    .tablink{padding:10px 14px;border:0;border-radius:10px;background:#ffffffaa;color:#333;font-weight:600;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.1);transition:.2s}
+    .tablink.active,.tablink:hover{background:#fff;transform:translateY(-1px)}
+    .subheader{display:none;max-width:1400px;margin:0 auto 14px;background:#fff7ed;color:#7c2d12;border:1px solid #fdba74;border-radius:10px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,.08);font-size:14px}
+    .subheader .tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#fed7aa;color:#7c2d12;font-weight:700;margin-right:8px}
+    .page{display:none}.page.active{display:block}
+
+    /* Containers + header */
+    .container{max-width:1400px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;display:none}
+    .container.authenticated{display:block}
+    .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:30px;text-align:center;position:relative}
+    .btn-logout{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:5px;padding:8px 15px;cursor:pointer}
+    .header-info{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:10px}
+    .connection-status{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.2);padding:8px 15px;border-radius:20px;font-size:.9em}
+    .status-indicator{width:10px;height:10px;border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .status-indicator.loading{background:#fbbf24}.status-indicator.connected{background:#4ade80}.status-indicator.error{background:#ef4444}
+    .refresh-btn{background:#fff;color:#764ba2;border:0;border-radius:25px;padding:10px 20px;font-weight:700;cursor:pointer}
+
+    /* Login */
+    .login-container{display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .login-box{background:#fff;padding:40px;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:400px;width:100%;text-align:center}
+    .btn-login{padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:0;border-radius:10px;font-weight:700;cursor:pointer}
+    .error-message-login{display:none;margin-top:10px;background:#fee;color:#c00;padding:12px;border-radius:8px}
+    .error-message-login.show{display:block}
+
+    /* Loading */
+    .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:9999}
+    .loading-overlay.active{display:flex}
+    .spinner{width:50px;height:50px;border:5px solid #f3f3f3;border-top:5px solid #764ba2;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+    /* (P1) Filters / charts / table */
+    .filters-section{padding:20px;background:#f8f9fa;border-bottom:3px solid #764ba2}
+    .filter-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+    .filter-content{margin-top:15px;display:none}
+    .filter-content.active{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+    .filter-group{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+    .filter-controls{display:flex;gap:10px;margin-bottom:8px}
+    .filter-options{max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;padding:8px}
+    .filter-option{display:flex;align-items:center;gap:8px;padding:4px}
+    .filter-actions{display:flex;gap:10px;margin-top:12px}
+    .apply-filters,.reset-filters{flex:1;padding:10px;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+    .apply-filters{background:#764ba2;color:#fff}.reset-filters{background:#6b7280;color:#fff}
+
+    .kpi-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;padding:30px;background:#fff}
+    .kpi-card{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:24px;border-radius:12px}
+    .topic-counter-section{padding:30px;background:linear-gradient(135deg,#f8f9fa 0%, #e9ecef 100%);border-bottom:3px solid #764ba2}
+    .topic-counter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1200px;margin:0 auto}
+    .topic-counter-card{background:#fff;border-radius:12px;padding:25px;box-shadow:0 5px 15px rgba(0,0,0,.1);border-left:5px solid #764ba2;position:relative}
+    .topic-rank{position:absolute;top:15px;right:15px;width:35px;height:35px;background:#764ba2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .topic-counter-name{font-size:1.2em;font-weight:700;color:#333;margin-bottom:10px;padding-right:45px}
+    .topic-stat{flex:1;text-align:center}.topic-stat-label{font-size:.85em;color:#6b7280}
+    .topic-stat-value{font-size:1.6em;font-weight:800;color:#764ba2}.topic-stat-value.rating{color:#f59e0b}
+
+    .charts-section{padding:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:30px}
+    .chart-container{background:#fff;padding:20px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.08)}
+    .chart-wrapper{position:relative;height:300px}
+
+    /* 🔹 titolo + selettore topic dentro il box del grafico */
+    .chart-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+    .chart-head-row h3{margin:0}
+    .trend-select{display:flex;align-items:center;gap:8px}
+    .trend-select label{font-weight:700;color:#764ba2}
+
+    .table-section{padding:30px;background:#f8f9fa}
+    .table-controls{display:flex;gap:12px;margin-bottom:12px}
+    .table-container{background:#fff;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.08);overflow:hidden}
+    table{width:100%;border-collapse:collapse}
+    thead{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+    th,td{padding:12px 15px;border-bottom:1px solid #eaeaea}
+    .pagination{display:flex;justify-content:center;gap:10px;padding:14px}
+    .select{padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px}
+
+    /* (P2) KPI tiles */
+    .grid-2col{display:grid;grid-template-columns:1.1fr .9fr;gap:26px}
+    .grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+    .tile{background:#7f1d1d;color:#fff;padding:18px;border-radius:18px;border:2px solid #00000022}
+    .tile.soft{background:#f1b24a;color:#1f2937}
+    .tile h4{margin:0 0 6px;font-weight:700}
+    .tile .big{font-size:32px;font-weight:800}
+    .caps{letter-spacing:.5px;font-weight:900}
+    .chart-title{color:#7f1d1d;font-weight:900;font-size:26px;margin:8px 0 12px}
+
+    /* (P2) Filters */
+    .filters-section--survey{padding:20px;background:#fff;border-bottom:3px solid #7f1d1d}
+    .filter-header--survey{display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:#fff7ed;border:1px solid #fdba74;padding:12px;border-radius:10px}
+    .filter-content--survey{margin-top:12px;display:none}
+    .filter-content--survey.active{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .filter-group--survey{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
+    .apply-filters--survey{background:#7f1d1d;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .reset-filters--survey{background:#6b7280;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
+  </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-container">
-        <div class="login-box">
-            <div class="lock-icon">🔒</div>
-            <h1>Dashboard Fradiavolo</h1>
-            <p>Inserisci la password per accedere</p>
-            <form class="login-form" onsubmit="checkPassword(event)">
-                <div class="input-group">
-                    <input type="password" id="passwordInput" placeholder="Password" required autocomplete="off">
-                </div>
-                <button type="submit" class="btn-login">Accedi</button>
-            </form>
-            <div id="errorMessageLogin" class="error-message-login">
-                ❌ Password errata. Riprova.
-            </div>
-        </div>
-    </div>
+  <!-- Tabs + subheader -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tablink active" data-page="platform" onclick="switchPage('platform')">Recensioni Piattaforme</button>
+    <button class="tablink" data-page="survey" onclick="switchPage('survey')">Recensioni Sondaggio</button>
+  </nav>
+  <div class="subheader" id="subheader"><span class="tag">Suggerimento</span> <span id="subheaderText">Stai visualizzando le recensioni dalle piattaforme.</span></div>
 
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <p>Caricamento dati...</p>
-        </div>
+  <!-- Login -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-box">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h1>Dashboard Fradiavolo</h1>
+      <p style="color:#6b7280">Inserisci la password per accedere</p>
+      <form onsubmit="checkPassword(event)">
+        <input type="password" id="passwordInput" placeholder="Password" required autocomplete="off" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;margin:14px 0">
+        <button class="btn-login" type="submit">Accedi</button>
+      </form>
+      <div id="errorMessageLogin" class="error-message-login">❌ Password errata. Riprova.</div>
     </div>
+  </div>
 
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay"><div><div class="spinner"></div></div></div>
+
+  <!-- PAGINA 1: PIATTAFORME -->
+  <div class="page active" id="page-platform">
     <div class="container" id="dashboardContainer">
-        <div class="header">
-            <button class="btn-logout" onclick="logout()">🚪 Esci</button>
-            <h1>🍕 Dashboard Recensioni Fradiavolo</h1>
-            <div class="header-info">
-                <div class="connection-status">
-                    <div class="status-indicator loading" id="statusIndicator"></div>
-                    <span id="statusText">Pronto per configurazione</span>
-                </div>
-                <button class="refresh-btn" id="refreshBtn" onclick="loadDataFromScript()">
-                    <span>🔄</span>
-                    <span>Aggiorna Dati</span>
-                </button>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.9em;" id="lastUpdate"></div>
+      <div class="header">
+        <button class="btn-logout" onclick="logout()">🚪 Esci</button>
+        <h1>🍕 Recensioni Piattaforme</h1>
+        <div class="header-info">
+          <div class="connection-status"><div class="status-indicator loading" id="statusIndicator"></div><span id="statusText">In attesa caricamento</span></div>
+          <button class="refresh-btn" id="refreshBtn" onclick="refreshPlatform()">🔄 Aggiorna Dati</button>
+        </div>
+        <div id="lastUpdate" style="margin-top:6px;font-size:.9em"></div>
+      </div>
+
+      <div class="filters-section">
+        <div class="filter-header" onclick="toggleFilters()">
+          <h2 style="color:#764ba2">🔍 Filtri (Piattaforme)</h2><span id="filterToggle">▼</span>
+        </div>
+        <div class="filter-content" id="filterContent">
+          <div class="filter-group">
+            <h3 style="color:#764ba2">📋 Topic</h3>
+            <div class="filter-controls"><button onclick="selectAll('topic')">Tutti</button><button onclick="selectNone('topic')">Nessuno</button></div>
+            <div class="filter-options" id="topicFilters"></div>
+          </div>
+          <div class="filter-group">
+            <h3 style="color:#764ba2">🏪 Punto Vendita</h3>
+            <div class="filter-controls"><button onclick="selectAll('store')">Tutti</button><button onclick="selectNone('store')">Nessuno</button></div>
+            <div class="filter-options" id="storeFilters"></div>
+          </div>
+          <div class="filter-group">
+            <h3 style="color:#764ba2">📅 Anno (ISO)</h3>
+            <div class="filter-controls"><button onclick="selectAll('year')">Tutti</button><button onclick="selectNone('year')">Nessuno</button></div>
+            <div class="filter-options" id="yearFilters"></div>
+          </div>
+          <div class="filter-group">
+            <h3 style="color:#764ba2">📅 Settimana (ISO)</h3>
+            <div class="filter-controls"><button onclick="selectAll('week')">Tutte</button><button onclick="selectNone('week')">Nessuna</button></div>
+            <div class="filter-options" id="weekFilters"></div>
+          </div>
+          <div class="filter-group">
+            <h3 style="color:#764ba2">📱 Piattaforma</h3>
+            <div class="filter-controls"><button onclick="selectAll('platform')">Tutte</button><button onclick="selectNone('platform')">Nessuna</button></div>
+            <div class="filter-options" id="platformFilters"></div>
+          </div>
+          <div class="filter-group">
+            <h3 style="color:#764ba2">⭐ Voto</h3>
+            <div class="filter-controls"><button onclick="selectAll('rating')">Tutti</button><button onclick="selectNone('rating')">Nessuno</button></div>
+            <div class="filter-options" id="ratingFilters"></div>
+          </div>
+          <div class="filter-actions">
+            <button class="apply-filters" onclick="applyFilters()">✓ Applica</button>
+            <button class="reset-filters" onclick="resetFilters()">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-section" id="kpiSection"></div>
+
+      <div class="topic-counter-section">
+        <div class="topic-counter-grid" id="topicCounterGrid"></div>
+      </div>
+
+      <div class="charts-section">
+        <div class="chart-container"><h3>📊 Distribuzione per Topic</h3><div class="chart-wrapper"><canvas id="topicChart"></canvas></div></div>
+        <div class="chart-container"><h3>⭐ Distribuzione Voti</h3><div class="chart-wrapper"><canvas id="ratingChart"></canvas></div></div>
+
+        <div class="chart-container" style="grid-column:1/-1"><h3>🏪 Voto Medio per Punto Vendita</h3>
+          <div class="chart-wrapper"><canvas id="storeChart"></canvas></div>
         </div>
 
-        <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
-
-        <!-- Filtri -->
-        <div class="filters-section">
-            <div class="filter-header" onclick="toggleFilters()">
-                <h2>🔍 Filtri</h2>
-                <span id="filterToggle">▼</span>
+        <!-- 🔹 Trend con selettore Focus Topic dentro il riquadro -->
+        <div class="chart-container" style="grid-column:1/-1">
+          <div class="chart-head-row">
+            <h3>📈 Trend Temporale</h3>
+            <div class="trend-select">
+              <label for="trendTopicSelect">Focus:</label>
+              <select id="trendTopicSelect" class="select" onchange="updateCharts()">
+                <option value="__ALL__">Tutte le recensioni</option>
+              </select>
             </div>
-            <div class="filter-content" id="filterContent">
-                <div class="filter-group">
-                    <h3>📋 Topic</h3>
-                    <div class="filter-controls">
-                        <button onclick="selectAll('topic')">Tutti</button>
-                        <button onclick="selectNone('topic')">Nessuno</button>
-                    </div>
-                    <div class="filter-options" id="topicFilters"></div>
-                </div>
-
-                <div class="filter-group">
-                    <h3>🏪 Punto Vendita</h3>
-                    <div class="filter-controls">
-                        <button onclick="selectAll('store')">Tutti</button>
-                        <button onclick="selectNone('store')">Nessuno</button>
-                    </div>
-                    <div class="filter-options" id="storeFilters"></div>
-                </div>
-
-                <div class="filter-group">
-                    <h3>📅 Settimana</h3>
-                    <div class="filter-controls">
-                        <button onclick="selectAll('week')">Tutte</button>
-                        <button onclick="selectNone('week')">Nessuna</button>
-                    </div>
-                    <div class="filter-options" id="weekFilters"></div>
-                </div>
-
-                <div class="filter-group">
-                    <h3>📱 Piattaforma</h3>
-                    <div class="filter-controls">
-                        <button onclick="selectAll('platform')">Tutte</button>
-                        <button onclick="selectNone('platform')">Nessuna</button>
-                    </div>
-                    <div class="filter-options" id="platformFilters"></div>
-                </div>
-
-                <div class="filter-group">
-                    <h3>⭐ Voto</h3>
-                    <div class="filter-controls">
-                        <button onclick="selectAll('rating')">Tutti</button>
-                        <button onclick="selectNone('rating')">Nessuno</button>
-                    </div>
-                    <div class="filter-options" id="ratingFilters"></div>
-                </div>
-
-                <div class="filter-actions">
-                    <button class="apply-filters" onclick="applyFilters()">✓ Applica Filtri</button>
-                    <button class="reset-filters" onclick="resetFilters()">↺ Reset Filtri</button>
-                </div>
-            </div>
+          </div>
+          <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
         </div>
 
-        <!-- KPI -->
-        <div class="kpi-section" id="kpiSection"></div>
+        <div class="chart-container"><h3>📊 Voto Medio per Topic</h3><div class="chart-wrapper"><canvas id="topicRatingChart"></canvas></div></div>
+        <div class="chart-container"><h3>📱 Recensioni per Piattaforma</h3><div class="chart-wrapper"><canvas id="platformChart"></canvas></div></div>
+      </div>
 
-        <!-- NUOVO: Topic Counter Section -->
-        <div class="topic-counter-section">
-            <div class="topic-counter-header">
-                <h2>🏆 Top Topic per Recensioni</h2>
-                <p>I topic più discussi dai clienti con numero recensioni e voto medio</p>
-            </div>
-            <div class="topic-counter-grid" id="topicCounterGrid"></div>
+      <div class="table-section">
+        <div class="table-controls"><input id="searchInput" type="text" placeholder="🔍 Cerca nel testo..." onkeyup="filterTable()" style="flex:1;padding:10px;border:2px solid #e5e7eb;border-radius:8px"></div>
+        <div class="table-container">
+          <table id="reviewsTable">
+            <thead><tr><th>Data</th><th>Punto Vendita</th><th>Voto</th><th>Topic</th><th>Testo</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
         </div>
-
-        <!-- Grafici -->
-        <div class="charts-section">
-            <div class="chart-container">
-                <h3>📊 Distribuzione per Topic</h3>
-                <div class="chart-wrapper">
-                    <canvas id="topicChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <h3>⭐ Distribuzione Voti</h3>
-                <div class="chart-wrapper">
-                    <canvas id="ratingChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container full-width">
-                <h3>🏪 Voto Medio per Punto Vendita</h3>
-                <div class="chart-wrapper">
-                    <canvas id="storeChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container full-width">
-                <h3>📈 Trend Temporale</h3>
-                <div class="trend-selector">
-                    <select id="trendSelector" onchange="updateTrendChart()">
-                        <option value="total">Totale - Recensioni + Voto Medio</option>
-                        <option value="Qualità Prodotto">Qualità Prodotto - Recensioni + Voto</option>
-                        <option value="Servizio">Servizio - Recensioni + Voto</option>
-                        <option value="Prezzo">Prezzo - Recensioni + Voto</option>
-                        <option value="Location/Ambiente">Location/Ambiente - Recensioni + Voto</option>
-                        <option value="Pulizia/Igiene">Pulizia/Igiene - Recensioni + Voto</option>
-                    </select>
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <h3>📊 Voto Medio per Topic</h3>
-                <div class="chart-wrapper">
-                    <canvas id="topicRatingChart"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-container">
-                <h3>📱 Recensioni per Piattaforma</h3>
-                <div class="chart-wrapper">
-                    <canvas id="platformChart"></canvas>
-                </div>
-            </div>
+        <div class="pagination">
+          <button onclick="previousPage()" id="prevBtn">← Precedente</button>
+          <span id="pageInfo"></span>
+          <button onclick="nextPage()" id="nextBtn">Successiva →</button>
         </div>
-
-        <!-- Tabella Recensioni -->
-        <div class="table-section">
-            <h2 style="color: #764ba2; margin-bottom: 20px;">📋 Recensioni Dettagliate</h2>
-            <div class="table-controls">
-                <input type="text" id="searchInput" placeholder="🔍 Cerca nel testo delle recensioni..." onkeyup="filterTable()">
-            </div>
-            <div class="table-container">
-                <table id="reviewsTable">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Punto Vendita</th>
-                            <th>Voto</th>
-                            <th>Topic</th>
-                            <th>Testo</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
-            <div class="pagination">
-                <button onclick="previousPage()" id="prevBtn">← Precedente</button>
-                <span id="pageInfo"></span>
-                <button onclick="nextPage()" id="nextBtn">Successiva →</button>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // CONFIGURAZIONE PASSWORD
-        const CORRECT_PASSWORD = '2912A';
+  <!-- PAGINA 2: SONDAGGIO -->
+  <div class="page" id="page-survey">
+    <div class="container" id="surveyContainer">
+      <div class="header">
+        <button class="btn-logout" onclick="logout()">🚪 Esci</button>
+        <h1>🗳️ Recensioni Sondaggio</h1>
+        <div class="header-info">
+          <div class="connection-status"><div class="status-indicator loading" id="surveyStatusIndicator"></div><span id="surveyStatusText">In attesa caricamento</span></div>
+          <button class="refresh-btn" id="surveyRefreshBtn" onclick="refreshSurvey()">🔄 Aggiorna Dati</button>
+        </div>
+        <div id="surveyLastUpdate" style="margin-top:6px;font-size:.9em"></div>
+      </div>
 
-        // URL HARDCODED - Non visibile all'utente
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTWZTogMQk5ORruYq8PXn5KC_vEZwxF9T_lq7zc3-3-CnFBV22SgrHrltfa2yAjpoH/exec';
-        
-        // Variabili globali
-        let allData = [];
-        let filteredData = [];
-        let currentPage = 1;
-        const rowsPerPage = 50;
-        let charts = {};
+      <!-- Filtri sondaggio -->
+      <div class="filters-section--survey">
+        <div class="filter-header--survey" onclick="toggleSurveyFilters()">
+          <h3 style="color:#7f1d1d">🔍 Filtri (Sondaggio)</h3><span id="surveyFilterToggle">▼</span>
+        </div>
+        <div class="filter-content--survey" id="surveyFilterContent">
+          <div class="filter-group--survey">
+            <h4 style="color:#7f1d1d;margin-bottom:6px">📅 Anno (ISO)</h4>
+            <div class="filter-controls" style="margin:8px 0">
+              <button onclick="surveySelectAll('year')">Tutti</button>
+              <button onclick="surveySelectNone('year')">Nessuno</button>
+            </div>
+            <div class="filter-options" id="surveyYearFilters" style="max-height:160px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px"></div>
+          </div>
+          <div class="filter-group--survey">
+            <h4 style="color:#7f1d1d;margin-bottom:6px">🏪 Punto vendita</h4>
+            <div class="filter-controls" style="margin:8px 0">
+              <button onclick="surveySelectAll('store')">Tutti</button>
+              <button onclick="surveySelectNone('store')">Nessuno</button>
+            </div>
+            <div class="filter-options" id="surveyStoreFilters" style="max-height:160px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px"></div>
+          </div>
+          <div class="filter-group--survey">
+            <h4 style="color:#7f1d1d;margin-bottom:6px">📅 Week (ISO)</h4>
+            <div class="filter-controls" style="margin:8px 0">
+              <button onclick="surveySelectAll('week')">Tutte</button>
+              <button onclick="surveySelectNone('week')">Nessuna</button>
+            </div>
+            <div class="filter-options" id="surveyWeekFilters" style="max-height:160px;overflow:auto;border:1px solid #eee;border-radius:8px;padding:8px"></div>
+          </div>
+          <div class="filter-actions" style="margin-top:10px">
+            <button class="apply-filters--survey" onclick="surveyApplyFilters()">✓ Applica</button>
+            <button class="reset-filters--survey" onclick="surveyResetFilters()">↺ Reset</button>
+          </div>
+        </div>
+      </div>
 
-        // Controlla se l'utente è già autenticato
-        window.addEventListener('load', () => {
-            if (sessionStorage.getItem('authenticated') === 'true') {
-                showDashboard();
-                loadDataFromScript();
-            }
-        });
+      <div style="padding:26px">
+        <div class="grid-2col">
+          <div class="chart-container">
+            <h3 class="chart-title caps">NPS</h3>
+            <div class="chart-wrapper" style="height:360px"><canvas id="npsDonut"></canvas></div>
+          </div>
+          <div class="grid-auto">
+            <div class="tile soft"><h4 class="caps">Numero risposte</h4><div class="big" id="kpiResponses">–</div></div>
+            <div class="tile soft"><h4 class="caps">Età media</h4><div class="big" id="kpiAge">–</div></div>
+            <div class="tile"><h4>Qualità della pizza [1:5]</h4><div class="big" id="kpiPizza">–</div></div>
+            <div class="tile"><h4>Qualità dell’impasto [1:5]</h4><div class="big" id="kpiImpasto">–</div></div>
+            <div class="tile"><h4>Qualità degli ingredienti [1:5]</h4><div class="big" id="kpiIngredienti">–</div></div>
+            <div class="tile"><h4>Valutazione atmosfera [1:5]</h4><div class="big" id="kpiAtmosfera">–</div></div>
+            <div class="tile"><h4>Velocità del servizio [1:5]</h4><div class="big" id="kpiVelocita">–</div></div>
+            <div class="tile"><h4>Rapporto Q/P [1:5]</h4><div class="big" id="kpiQP">–</div></div>
+            <div class="tile"><h4>Qualità del servizio [1:5]</h4><div class="big" id="kpiServizio">–</div></div>
+          </div>
+        </div>
 
-        function checkPassword(event) {
-            event.preventDefault();
-            
-            const input = document.getElementById('passwordInput');
-            const errorMsg = document.getElementById('errorMessageLogin');
-            
-            if (input.value === CORRECT_PASSWORD) {
-                // Password corretta
-                sessionStorage.setItem('authenticated', 'true');
-                showDashboard();
-                loadDataFromScript();
-            } else {
-                // Password errata
-                errorMsg.classList.add('show');
-                input.value = '';
-                input.focus();
-                
-                setTimeout(() => {
-                    errorMsg.classList.remove('show');
-                }, 3000);
-            }
+        <div class="chart-container" style="margin-top:24px">
+          <h3 class="chart-title caps">Andamento Temporale</h3>
+          <div class="chart-wrapper" style="height:360px"><canvas id="npsTrend"></canvas></div>
+        </div>
+
+        <div class="chart-container" style="margin-top:24px">
+          <h3 class="chart-title caps">NPS per Punto Vendita</h3>
+          <div class="chart-wrapper" style="height:720px"><canvas id="npsByStore"></canvas></div>
+        </div>
+
+        <div class="grid-2col" style="margin-top:24px">
+          <div class="chart-container">
+            <h3 class="chart-title caps">Numero risposte per classe di età</h3>
+            <div class="chart-wrapper" style="height:380px"><canvas id="ageBuckets"></canvas></div>
+          </div>
+          <div class="chart-container">
+            <h3 class="chart-title caps">Numero risposte per frequenza di acquisto</h3>
+            <div class="chart-wrapper" style="height:380px"><canvas id="freqBuckets"></canvas></div>
+          </div>
+        </div>
+
+        <div class="table-section" style="margin-top:10px;background:#fff;border-radius:12px">
+          <h3 class="chart-title caps" style="margin:0 0 10px 0;padding:8px 0">Commenti</h3>
+          <div class="table-container">
+            <table>
+              <thead style="background:#7f1d1d"><tr><th>Data</th><th>Punto vendita</th><th>Box commenti</th></tr></thead>
+              <tbody id="commentsBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button onclick="commentsPrev()" id="commentsPrevBtn">← Precedente</button>
+            <span id="commentsPageInfo"></span>
+            <button onclick="commentsNext()" id="commentsNextBtn">Successiva →</button>
+          </div>
+        </div>
+
+        <div id="surveyError" style="display:none;background:#fee;color:#c00;padding:12px;border-radius:8px;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ================= CONFIG ================= */
+    const CORRECT_PASSWORD = '2912A';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrJPNYBWhkyXJn7PJnvADHwUBNxyhE_hDx7CsgCrx1dY5EJdMrylsryVQJT25IdtE9/exec';
+    const SHEET1_URL = () => SCRIPT_URL + '?_cb=' + Date.now();          // piattaforme (foglio 1)
+    const SHEET2_URL = () => SCRIPT_URL + '?sheet=2&_cb=' + Date.now();   // sondaggio  (foglio 2)
+
+    /* ============= STORE-ID → NOME (mappa completa) ============= */
+    const STORE_NAME = {
+      '129':'FDV ALESSANDRIA','122':'FDV ARESE','106':'FDV BOLOGNA S.STEFANO','135':'FDV BRESCIA CENTRO',
+      '118':'FDV BRESCIA ELNOS','134':'FDV ASTI','136':'FDV TORINO SAN SALVARIO','101':'FDV GENOVA CASTELLO',
+      '128':'FDV GENOVA MARE','125':'FDV MILANO BICOCCA','121':'FDV MILANO CITYLIFE','120':'FDV MILANO ISOLA',
+      '131':'FDV MILANO PORTA VENEZIA','127':'FDV MILANO PREMUDA','113':'FDV MILANO SEMPIONE','132':'FDV MODENA',
+      '126':'FDV MONZA','112':'FDV NOVARA','124':'FDV PARMA','137':'FDV RIMINI','202':'FDV RIVOLI',
+      '133':'FDV ROMA OSTIENSE','107':'FDV ROMA PARIOLI','138':'FDV ROMA TRASTEVERE','114':'FDV TORINO CARLINA',
+      '117':'FDV TORINO GM','123':'FDV TORINO IV MARZO','201':'FDV TORINO SAN SALVARIO','130':'FDV TORINO VANCHIGLIA',
+      '119':'FDV VARESE','10001':'FDV CASELECCHIO DI RENO','301':'FDV CAGLIARI'
+    };
+    const mapStore = v => { const s = String(v??'').trim(); return STORE_NAME[s] || s; };
+
+    /* ================= STATE ================= */
+    let platformAll = [], platformFiltered = [];
+    let surveyAll = [], surveyFiltered = [], surveyHeaders = [], surveyDateKey = null, surveyStoreKey = null;
+    let charts = {};
+    let currentPage = 1, rowsPerPage = 50;
+    let commentsPage = 1, commentsPerPage = 50, commentsRows = [];
+
+    /* ================= LOGIN FLOW ================= */
+    // 🔒 NIENTE auto-login: password richiesta sempre all'apertura
+    async function checkPassword(e){
+      e.preventDefault();
+      const ok = document.getElementById('passwordInput').value === CORRECT_PASSWORD;
+      if(!ok){ const el = document.getElementById('errorMessageLogin'); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3000); return;}
+      await showDashboard();          // mostra UI
+      await loadAllDataOnce();        // 🔹 singolo caricamento dati all'avvio
+    }
+
+    async function showDashboard(){
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('dashboardContainer').classList.add('authenticated');
+      document.getElementById('surveyContainer').classList.add('authenticated');
+      document.getElementById('tabbar').style.display='flex';
+      document.getElementById('subheader').style.display='block';
+      setSubheader('platform');
+    }
+
+    function logout(){ location.reload(); } // ritorna alla schermata password
+    function showLoading(s){ document.getElementById('loadingOverlay').classList.toggle('active',s); }
+    function setSubheader(which){
+      document.getElementById('subheaderText').textContent =
+        which==='platform'
+        ? 'Stai visualizzando le recensioni dalle piattaforme. Usa i filtri (Anno/Week ISO) e il focus Trend.'
+        : 'Stai visualizzando le recensioni del sondaggio (Foglio 2). Filtra per Anno, Store e Week ISO.';
+    }
+    function switchPage(which){
+      document.querySelectorAll('.tablink').forEach(b=>b.classList.toggle('active',b.dataset.page===which));
+      document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id===`page-${which}`));
+      setSubheader(which);
+      // 🔹 nessun fetch qui: solo render locale
+      if(which==='survey'){ renderSurveyAll(); } else { updateDashboard(); }
+    }
+
+    /* ================= DATE / SORT HELPERS ================= */
+    function isoWeekYear(dateVal){
+      let d;
+      if(typeof dateVal==='number'){ d = new Date((dateVal-25569)*86400*1000); }
+      else { d = new Date(dateVal); if(isNaN(d)) return {week:null,year:null,ts:0}; }
+      const ts = +d;
+      const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = (tmp.getUTCDay()+6)%7;
+      tmp.setUTCDate(tmp.getUTCDate()-dayNum+3);
+      const isoYear = tmp.getUTCFullYear();
+      const firstThursday = new Date(Date.UTC(isoYear,0,4));
+      const week = 1 + Math.round(((tmp-firstThursday)/86400000 - 3 + ((firstThursday.getUTCDay()+6)%7))/7);
+      return {week, year: isoYear, ts};
+    }
+    function fmtDate(v){
+      if(!v) return '';
+      if(typeof v==='number'){ const d=new Date((v-25569)*86400*1000); return d.toLocaleDateString('it-IT'); }
+      const d=new Date(v); return isNaN(d)? String(v): d.toLocaleDateString('it-IT');
+    }
+
+    /* ================= LOAD ONCE ================= */
+    async function loadAllDataOnce(){
+      showLoading(true);
+      try{
+        updateStatus('loading','Carico dati piattaforme…');
+        surveyUpdateStatus('loading','Carico dati sondaggio…');
+        const [plat, surv] = await Promise.all([ fetchJSON(SHEET1_URL()), fetchJSON(SHEET2_URL()) ]);
+
+        // Pagina 1
+        platformAll = processPlatformData(plat);
+        platformFiltered = [...platformAll];
+        initializeFilters(); resetFilters(); applyFilters();
+        populateTrendTopicSelect();
+        updateStatus('connected', `${platformAll.length} recensioni caricate`);
+        document.getElementById('lastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+
+        // Pagina 2
+        surveyAll = Array.isArray(surv) ? surv : [];
+        surveyHeaders = Object.keys(surveyAll[0] || {});
+        surveyDateKey = surveyHeaders.find(h=>/^(Data|Date|Timestamp)$/i.test(h)) || surveyHeaders[0];
+        surveyStoreKey = surveyHeaders.find(h=>/store|punto *vendita/i.test(h)) || surveyHeaders[1];
+        surveyFiltered = [...surveyAll];
+        initSurveyFilters();
+        renderSurveyAll();
+
+        surveyUpdateStatus('connected', `${surveyAll.length} righe caricate (Foglio 2)`);
+        document.getElementById('surveyLastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+      }catch(err){
+        showError('Piattaforme: '+err.message);
+        surveyShowError('Sondaggio: '+err.message);
+        updateStatus('error','Errore'); surveyUpdateStatus('error','Errore');
+      }finally{ showLoading(false); }
+    }
+
+    // 🔁 Aggiorna SOLO su click
+    async function refreshPlatform(){
+      const btn = document.getElementById('refreshBtn');
+      try{
+        btn.disabled = true; showLoading(true); updateStatus('loading','Aggiornamento in corso…');
+        const data = await fetchJSON(SHEET1_URL());
+        platformAll = processPlatformData(data); platformFiltered = [...platformAll];
+        initializeFilters(); resetFilters(); applyFilters();
+        populateTrendTopicSelect();
+        updateStatus('connected', `${platformAll.length} recensioni caricate`);
+        document.getElementById('lastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+      }catch(err){ showError(err.message); updateStatus('error','Errore'); }
+      finally{ btn.disabled=false; showLoading(false); }
+    }
+    async function refreshSurvey(){
+      const btn = document.getElementById('surveyRefreshBtn');
+      try{
+        btn.disabled = true; showLoading(true); surveyUpdateStatus('loading','Aggiornamento in corso…');
+        const data = await fetchJSON(SHEET2_URL());
+        surveyAll = Array.isArray(data) ? data : [];
+        surveyHeaders = Object.keys(surveyAll[0] || {});
+        surveyDateKey = surveyHeaders.find(h=>/^(Data|Date|Timestamp)$/i.test(h)) || surveyHeaders[0];
+        surveyStoreKey = surveyHeaders.find(h=>/store|punto *vendita/i.test(h)) || surveyHeaders[1];
+        surveyFiltered = [...surveyAll];
+        initSurveyFilters();
+        renderSurveyAll();
+        surveyUpdateStatus('connected', `${surveyAll.length} righe caricate (Foglio 2)`);
+        document.getElementById('surveyLastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+      }catch(err){ surveyShowError(err.message); surveyUpdateStatus('error','Errore'); }
+      finally{ btn.disabled=false; showLoading(false); }
+    }
+
+    /* ================= HELPERS ================= */
+    async function fetchJSON(url){ const r = await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }
+    function updateStatus(s,t){ const i=document.getElementById('statusIndicator'); i.className='status-indicator '+s; document.getElementById('statusText').textContent=t; }
+    function surveyUpdateStatus(s,t){ const i=document.getElementById('surveyStatusIndicator'); i.className='status-indicator '+s; document.getElementById('surveyStatusText').textContent=t; }
+    function showError(m){ const e=document.getElementById('errorMessage'); if(!e) return; e.textContent=m; e.classList.add('active'); setTimeout(()=>e.classList.remove('active'),8000); }
+    function surveyShowError(m){ const e=document.getElementById('surveyError'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',8000); }
+
+    /* ================= (P1) PIATTAFORME ================= */
+    function processPlatformData(data){
+      return data.map(r=>{
+        const rawDate = r.Data||r.data||'';
+        const {week, year, ts} = isoWeekYear(rawDate);
+        const rawStore = r['Punto vendita']||r.store||r.punto_vendita||'';
+        return {
+          Data: fmtDate(rawDate),
+          ts,
+          IsoWeek: week||'',
+          IsoYear: year||'',
+          'Punto vendita': mapStore(rawStore),
+          sourceFrom: r.sourceFrom||r.source||'',
+          voto: parseInt(r.voto||r.rating||0),
+          testo: r.testo||r.text||r.recensione||'',
+          TOPIC: r.TOPIC||r.topic||'NESSUN TESTO'
+        };
+      }).filter(r=>r['Punto vendita'] && r.voto>0);
+    }
+
+    function initializeFilters(){
+      const topics = [...new Set(platformAll.map(d => d.TOPIC))].sort();
+      const stores = [...new Set(platformAll.map(d => d['Punto vendita']))].sort();
+      const years  = [...new Set(platformAll.map(d => d.IsoYear).filter(Boolean))].sort((a,b)=>a-b);
+      const weeks  = [...new Set(platformAll.map(d => d.IsoWeek).filter(Boolean))].sort((a,b)=>a-b);
+      const plats  = [...new Set(platformAll.map(d => d.sourceFrom))].sort();
+      const ratings= [1,2,3,4,5];
+
+      createFilterCheckboxes('topicFilters', topics, 'topic');
+      createFilterCheckboxes('storeFilters', stores, 'store');
+      createFilterCheckboxes('yearFilters',  years,  'year');
+      createFilterCheckboxes('weekFilters',  weeks,  'week');
+      createFilterCheckboxes('platformFilters', plats, 'platform');
+      createFilterCheckboxes('ratingFilters', ratings, 'rating');
+    }
+    function populateTrendTopicSelect(){
+      const sel = document.getElementById('trendTopicSelect');
+      const topics = [...new Set(platformAll.map(d => d.TOPIC))].sort();
+      sel.innerHTML = `<option value="__ALL__">Tutte le recensioni</option>` + topics.map(t=>`<option value="${t}">${t}</option>`).join('');
+    }
+    function createFilterCheckboxes(containerId, items, type){
+      const c = document.getElementById(containerId);
+      c.innerHTML = items.map(val=>`
+        <div class="filter-option">
+          <input type="checkbox" id="${type}_${val}" value="${val}" checked>
+          <label for="${type}_${val}">${val} (${countItems(type,val)})</label>
+        </div>`).join('');
+    }
+    function countItems(type, value){
+      const map = {topic:'TOPIC', store:'Punto vendita', year:'IsoYear', week:'IsoWeek', platform:'sourceFrom', rating:'voto'};
+      const f = map[type]; return platformAll.filter(d => String(d[f])==String(value)).length;
+    }
+    function selectAll(type){ document.querySelectorAll(`#${type}Filters input[type="checkbox"]`).forEach(cb=>cb.checked=true); }
+    function selectNone(type){ document.querySelectorAll(`#${type}Filters input[type="checkbox"]`).forEach(cb=>cb.checked=false); }
+    function toggleFilters(){
+      const content = document.getElementById('filterContent');
+      const toggle = document.getElementById('filterToggle');
+      content.classList.toggle('active');
+      toggle.textContent = content.classList.contains('active') ? '▲' : '▼';
+    }
+    function resetFilters(){ ['topic','store','year','week','platform','rating'].forEach(selectAll); applyFilters(); }
+    function getSelectedValues(type){
+      return Array.from(document.querySelectorAll(`#${type}Filters input[type="checkbox"]:checked`)).map(cb=>cb.value);
+    }
+    function applyFilters(){
+      const sTopic = getSelectedValues('topic');
+      const sStore = getSelectedValues('store');
+      const sYear  = getSelectedValues('year');
+      const sWeek  = getSelectedValues('week');
+      const sPlat  = getSelectedValues('platform');
+      const sRate  = getSelectedValues('rating');
+
+      platformFiltered = platformAll.filter(d =>
+        sTopic.includes(d.TOPIC) &&
+        sStore.includes(d['Punto vendita']) &&
+        sYear.includes(String(d.IsoYear)) &&
+        sWeek.includes(String(d.IsoWeek)) &&
+        sPlat.includes(d.sourceFrom) &&
+        sRate.includes(String(d.voto))
+      );
+      currentPage = 1;
+      updateDashboard();
+    }
+
+    function updateDashboard(){ updateKPIs(); updateTopicCounter(); updateCharts(); updateTable(); }
+    function updateKPIs(){
+      const total = platformFiltered.length;
+      const avg = total? (platformFiltered.reduce((s,d)=>s+d.voto,0)/total).toFixed(2) : '0.00';
+      const pos = platformFiltered.filter(d=>d.voto>=4).length;
+      const neg = platformFiltered.filter(d=>d.voto<=2).length;
+      document.getElementById('kpiSection').innerHTML = `
+        <div class="kpi-card"><div class="kpi-title">Totale Recensioni</div><div class="kpi-value">${total.toLocaleString()}</div></div>
+        <div class="kpi-card"><div class="kpi-title">Voto Medio</div><div class="kpi-value">${avg} ⭐</div></div>
+        <div class="kpi-card"><div class="kpi-title">Positive (4–5★)</div><div class="kpi-value">${pos.toLocaleString()}</div></div>
+        <div class="kpi-card"><div class="kpi-title">Negative (1–2★)</div><div class="kpi-value">${neg.toLocaleString()}</div></div>`;
+    }
+    function updateTopicCounter(){
+      const stats = {};
+      platformFiltered.forEach(d=>{
+        if((d.TOPIC||'').toUpperCase()==='NESSUN TESTO') return;
+        if(!stats[d.TOPIC]) stats[d.TOPIC]={c:0,s:0};
+        stats[d.TOPIC].c++; stats[d.TOPIC].s+=d.voto;
+      });
+      const arr = Object.keys(stats).map(k=>({name:k,count:stats[k].c,avg:(stats[k].s/stats[k].c).toFixed(2)}))
+                   .sort((a,b)=>b.count-a.count);
+      document.getElementById('topicCounterGrid').innerHTML =
+        arr.slice(0,6).map((t,i)=>`<div class="topic-counter-card">
+          <div class="topic-rank">${i+1}</div>
+          <div class="topic-counter-name">${t.name}</div>
+          <div class="topic-counter-stats" style="display:flex;gap:10px;margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px">
+            <div class="topic-stat"><div class="topic-stat-label">Recensioni</div><div class="topic-stat-value">${t.count}</div></div>
+            <div class="topic-stat"><div class="topic-stat-label">Voto Medio</div><div class="topic-stat-value rating">${t.avg} ⭐</div></div>
+          </div></div>`).join('');
+    }
+    function updateCharts(){
+      // topic pie
+      const topicCounts = {}; platformFiltered.forEach(d=>topicCounts[d.TOPIC]=(topicCounts[d.TOPIC]||0)+1);
+      drawPie('topicChart', Object.keys(topicCounts), Object.values(topicCounts));
+
+      // rating bar
+      const ratingCounts = [1,2,3,4,5].map(r=>platformFiltered.filter(d=>d.voto===r).length);
+      drawBar('ratingChart', ['1⭐','2⭐','3⭐','4⭐','5⭐'], ratingCounts, false);
+
+      // store avg horizontal (tutti i negozi)
+      const storeData = {};
+      platformFiltered.forEach(d=>{ const s=mapStore(d['Punto vendita']); if(!storeData[s]) storeData[s]={c:0,som:0}; storeData[s].c++; storeData[s].som+=d.voto; });
+      const stores = Object.keys(storeData).map(k=>({name:k,avg:storeData[k].som/storeData[k].c})).sort((a,b)=>b.avg-a.avg);
+      drawBarH('storeChart', stores.map(s=>s.name), stores.map(s=>+s.avg.toFixed(2)), 5);
+
+      // trend week-year con selettore Topic
+      const topicSel = document.getElementById('trendTopicSelect').value;
+      const subset = topicSel==='__ALL__' ? platformFiltered : platformFiltered.filter(d=>d.TOPIC===topicSel);
+      const wk = {};
+      subset.forEach(d=>{
+        const key = `${d.IsoYear}-W${String(d.IsoWeek).padStart(2,'0')}`;
+        if(!wk[key]) wk[key]={c:0,s:0}; wk[key].c++; wk[key].s+=d.voto;
+      });
+      const labels = Object.keys(wk).sort();
+      const counts = labels.map(k=>wk[k].c), avgs = labels.map(k=>wk[k].s/wk[k].c);
+      drawComboTrend('trendChart', labels, counts, avgs);
+
+      // topic avg bar
+      const tAvg = {}; platformFiltered.forEach(d=>{ if(!tAvg[d.TOPIC]) tAvg[d.TOPIC]={c:0,s:0}; tAvg[d.TOPIC].c++; tAvg[d.TOPIC].s+=d.voto; });
+      const tNames = Object.keys(tAvg).sort(), tValues = tNames.map(k=>+(tAvg[k].s/tAvg[k].c).toFixed(2));
+      drawBar('topicRatingChart', tNames, tValues, true);
+
+      // platform pie
+      const pf = {}; platformFiltered.forEach(d=>pf[d.sourceFrom]=(pf[d.sourceFrom]||0)+1);
+      drawPie('platformChart', Object.keys(pf), Object.values(pf));
+    }
+    function updateTable(){
+      const searchTerm = (document.getElementById('searchInput')?.value||'').toLowerCase();
+      const disp = platformFiltered
+        .filter(d => (d.testo||'').toLowerCase().includes(searchTerm))
+        .sort((a,b)=> b.ts - a.ts); // 🔹 più recenti in alto
+      const start = (currentPage-1)*rowsPerPage, end = start+rowsPerPage;
+      const page = disp.slice(start,end);
+      document.getElementById('tableBody').innerHTML = page.map(d=>`
+        <tr><td>${d.Data}</td><td>${mapStore(d['Punto vendita'])}</td><td>${'⭐'.repeat(d.voto)}</td><td>${d.TOPIC}</td><td>${d.testo||'—'}</td></tr>`).join('');
+      const totalPages = Math.ceil(disp.length/rowsPerPage)||1;
+      document.getElementById('pageInfo').textContent = `Pagina ${currentPage} di ${totalPages} (${disp.length} recensioni)`;
+      document.getElementById('prevBtn').disabled = currentPage===1;
+      document.getElementById('nextBtn').disabled = currentPage===totalPages;
+    }
+    function filterTable(){ currentPage=1; updateTable(); }
+    function previousPage(){ if(currentPage>1){ currentPage--; updateTable(); } }
+    function nextPage(){
+      const searchTerm = (document.getElementById('searchInput')?.value||'').toLowerCase();
+      const disp = platformFiltered.filter(d => (d.testo||'').toLowerCase().includes(searchTerm));
+      const totalPages = Math.ceil(disp.length/rowsPerPage)||1;
+      if(currentPage<totalPages){ currentPage++; updateTable(); }
+    }
+
+    /* ===== chart helpers (P1) ===== */
+    function drawPie(id, labels, data){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+      type:'pie', data:{ labels, datasets:[{ data, backgroundColor:['#667eea','#764ba2','#f093fb','#4facfe','#43e97b','#fa709a'] }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }});
+    }
+    function drawBar(id, labels, data, toFive){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar', data:{ labels, datasets:[{ data, backgroundColor:'#764ba2' }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} },
+          scales:{ y:{ beginAtZero:true, max: toFive? 5 : undefined } } }
+      });
+    }
+    function drawBarH(id, labels, data, max=5){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar',
+        data:{ labels, datasets:[{ data, backgroundColor:'#764ba2' }] },
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}}, scales:{ x:{ beginAtZero:true, max } } }
+      });
+    }
+    function drawComboTrend(id, labels, counts, avgs){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar',
+        data:{ labels, datasets:[
+          { label:'Numero Recensioni', data:counts, backgroundColor:'rgba(102,126,234,.5)', yAxisID:'y' },
+          { label:'Voto Medio', data:avgs, type:'line', borderColor:'#f093fb', backgroundColor:'transparent', yAxisID:'y1' }
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom'} } ,
+          scales:{ y:{ beginAtZero:true }, y1:{ beginAtZero:true, max:5, position:'right' } } }
+      });
+    }
+
+    /* ================= (P2) SONDAGGIO ================= */
+
+    // Helpers per mappare colonne per lettera
+    function letterToIndex(letter){ let n=0; letter=String(letter).toUpperCase(); for(let i=0;i<letter.length;i++){ n = n*26 + (letter.charCodeAt(i)-64);} return n-1; }
+    function colKey(letter){ const idx = letterToIndex(letter); return surveyHeaders[idx] || null; }
+    function avgCol(letter){
+      const key = colKey(letter); if(!key) return null;
+      const nums = surveyFiltered.map(r=>Number(r[key])).filter(v=>!isNaN(v));
+      return nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length) : null;
+    }
+
+    // NPS: colonna N (0–10)
+    function computeNPSBucketsUsingKey(key, rows = surveyFiltered){
+      let p=0,n=0,d=0;
+      if(!key) return {prom:0, neut:0, detr:0, tot:0, nps:0};
+      for(const r of rows){
+        const v = Number(r[key]);
+        if(isNaN(v)) continue;
+        if(v>=9) p++; else if(v>=7) n++; else d++;
+      }
+      const tot = p+n+d || 1;
+      return {prom:p, neut:n, detr:d, tot, nps: Math.round(((p/tot)-(d/tot))*100)};
+    }
+
+    /* ===== FILTRI SONDAGGIO (Anno/Store/Week) ===== */
+    function toggleSurveyFilters(){
+      const c = document.getElementById('surveyFilterContent');
+      const t = document.getElementById('surveyFilterToggle');
+      c.classList.toggle('active');
+      t.textContent = c.classList.contains('active') ? '▲' : '▼';
+    }
+    function initSurveyFilters(){
+      const yearsSet = new Set(), storesSet = new Set(), weeksSet = new Set();
+      for(const r of surveyAll){
+        const {year, week} = isoWeekYear(r[surveyDateKey]);
+        if(year) yearsSet.add(year);
+        if(week) weeksSet.add(week);
+        const storeName = mapStore(r[surveyStoreKey]);
+        if(storeName) storesSet.add(storeName);
+      }
+      const years = Array.from(yearsSet).sort((a,b)=>a-b);
+      const stores = Array.from(storesSet).sort();
+      const weeks = Array.from(weeksSet).sort((a,b)=>a-b);
+
+      document.getElementById('surveyYearFilters').innerHTML =
+        years.map(y=>`<div class="filter-option"><input type="checkbox" id="surveyYear_${y}" value="${y}" checked><label for="surveyYear_${y}">${y}</label></div>`).join('');
+      document.getElementById('surveyStoreFilters').innerHTML =
+        stores.map(s=>`<div class="filter-option"><input type="checkbox" id="surveyStore_${s}" value="${s}" checked><label for="surveyStore_${s}">${s}</label></div>`).join('');
+      document.getElementById('surveyWeekFilters').innerHTML =
+        weeks.map(w=>`<div class="filter-option"><input type="checkbox" id="surveyWeek_${w}" value="${w}" checked><label for="surveyWeek_${w}">W${String(w).padStart(2,'0')}</label></div>`).join('');
+    }
+    function surveySelectAll(type){
+      const id = type==='year'?'surveyYearFilters': type==='store'?'surveyStoreFilters':'surveyWeekFilters';
+      document.querySelectorAll('#'+id+' input[type="checkbox"]').forEach(cb=>cb.checked=true);
+    }
+    function surveySelectNone(type){
+      const id = type==='year'?'surveyYearFilters': type==='store'?'surveyStoreFilters':'surveyWeekFilters';
+      document.querySelectorAll('#'+id+' input[type="checkbox"]').forEach(cb=>cb.checked=false);
+    }
+    function getSelectedSurvey(type){
+      const id = type==='year'?'surveyYearFilters': type==='store'?'surveyStoreFilters':'surveyWeekFilters';
+      return Array.from(document.querySelectorAll('#'+id+' input[type="checkbox"]:checked')).map(cb=>cb.value);
+    }
+    function surveyApplyFilters(){
+      const years = getSelectedSurvey('year');
+      const stores = getSelectedSurvey('store');
+      const weeks = getSelectedSurvey('week');
+      surveyFiltered = surveyAll.filter(r=>{
+        const {year, week} = isoWeekYear(r[surveyDateKey]);
+        const s = mapStore(r[surveyStoreKey]);
+        return years.includes(String(year)) && stores.includes(String(s)) && weeks.includes(String(week));
+      });
+      commentsPage = 1; // reset paginazione commenti
+      renderSurveyAll();
+    }
+    function surveyResetFilters(){ surveySelectAll('year'); surveySelectAll('store'); surveySelectAll('week'); surveyApplyFilters(); }
+
+    /* ===== RENDER SONDAGGIO ===== */
+    function renderSurveyAll(){
+      // KPI richiesti
+      document.getElementById('kpiResponses').textContent = surveyFiltered.length.toLocaleString('it-IT');
+      const setVal = (id, val)=> document.getElementById(id).textContent = (val==null? '–' : val.toFixed(2).replace('.', ','));
+      const age = avgCol('C'); document.getElementById('kpiAge').textContent = (age==null? '–' : Math.round(age));
+      setVal('kpiPizza',       avgCol('F'));
+      setVal('kpiImpasto',     avgCol('G'));
+      setVal('kpiIngredienti', avgCol('H'));
+      setVal('kpiAtmosfera',   avgCol('I'));
+      setVal('kpiVelocita',    avgCol('J'));
+      setVal('kpiQP',          avgCol('P'));
+      setVal('kpiServizio',    avgCol('Q'));
+
+      // NPS (colonna N)
+      const NPS_KEY = colKey('N');
+      const buckets = computeNPSBucketsUsingKey(NPS_KEY, surveyFiltered);
+      drawDonut('npsDonut', ['Promotori','Neutri','Detrattori'], [buckets.prom, buckets.neut, buckets.detr], buckets.nps);
+
+      // Andamento NPS per settimana ISO (tooltip con NPS + n risposte)
+      const weekMap = {};
+      for(const r of surveyFiltered){
+        const {week, year} = isoWeekYear(r[surveyDateKey]);
+        if(!week || !year) continue;
+        const v = Number(r[NPS_KEY]); if(isNaN(v)) continue;
+        const key = `${year}-W${String(week).padStart(2,'0')}`;
+        if(!weekMap[key]) weekMap[key]={p:0,n:0,d:0};
+        if(v>=9) weekMap[key].p++; else if(v>=7) weekMap[key].n++; else weekMap[key].d++;
+      }
+      const wkLabels = Object.keys(weekMap).sort();
+      const wkCounts = wkLabels.map(k=> weekMap[k].p + weekMap[k].n + weekMap[k].d );
+      const npsSeries = wkLabels.map(k => {
+        const a = weekMap[k], tot=a.p+a.n+a.d||1;
+        return Math.round(((a.p/tot)-(a.d/tot))*100);
+      });
+      drawTrendSurvey('npsTrend', wkLabels, npsSeries, wkCounts);
+
+      // NPS per punto vendita (tooltip con NPS + n risposte)
+      const byStore = {};
+      for(const r of surveyFiltered){
+        const name = mapStore(r[surveyStoreKey]);
+        if(!name) continue;
+        const v = Number(r[NPS_KEY]); if(isNaN(v)) continue;
+        if(!byStore[name]) byStore[name]={p:0,n:0,d:0};
+        if(v>=9) byStore[name].p++; else if(v>=7) byStore[name].n++; else byStore[name].d++;
+      }
+      const storeRows = Object.entries(byStore).map(([name,o])=>{
+        const tot=o.p+o.n+o.d||1; return {name, nps: Math.round(((o.p/tot)-(o.d/tot))*100), count: tot};
+      }).sort((a,b)=>b.nps-a.nps);
+      drawBarH_survey('npsByStore', storeRows.map(x=>x.name), storeRows.map(x=>x.nps), storeRows.map(x=>x.count), 100);
+
+      // Bucket età (da C)
+      const ageBuckets = {};
+      const ageKey = colKey('C');
+      for(const r of surveyFiltered){
+        const v = Number(r[ageKey]); if(isNaN(v)) continue;
+        const lab = v<20? '<20' : v<25? '20-24' : v<30? '25-29' : v<35? '30-34' : v<40? '35-39' : v<45? '40-44' : v<50? '45-49' : v<55? '50-54' : v<60? '55-59' : '>60';
+        ageBuckets[lab]=(ageBuckets[lab]||0)+1;
+      }
+      const orderA = ['<20','20-24','25-29','30-34','35-39','40-44','45-49','50-54','55-59','>60'];
+      const ageCats = Object.keys(ageBuckets).sort((a,b)=> orderA.indexOf(a)-orderA.indexOf(b));
+      drawBar_survey('ageBuckets', ageCats, ageCats.map(k=>ageBuckets[k]));
+
+      // Frequenza d’acquisto (se presente)
+      const freqKey = surveyHeaders.find(h=>/frequenza/i.test(h)) || null;
+      if(freqKey){
+        const freqMap = {};
+        for(const r of surveyFiltered){ const v = String(r[freqKey]||'').trim(); if(v) freqMap[v]=(freqMap[v]||0)+1; }
+        const orderF = ['È la prima volta','Raramente','Una o più volte al mese','Una volta a settimana'];
+        const freqCats = Object.keys(freqMap).sort((a,b)=> (orderF.indexOf(a)<0?999:orderF.indexOf(a))-(orderF.indexOf(b)<0?999:orderF.indexOf(b)));
+        drawBar_survey('freqBuckets', freqCats, freqCats.map(k=>freqMap[k]));
+      }
+
+      // Commenti (ordinati per data desc + paginazione)
+      const commentsKey = surveyHeaders.find(h=>/comment/i.test(h)) || surveyHeaders.find(h=>/box.*comment/i.test(h)) || null;
+      commentsRows = surveyFiltered
+        .map(r=>({ ts: isoWeekYear(r[surveyDateKey]).ts, d: r[surveyDateKey], s: mapStore(r[surveyStoreKey]), c: commentsKey? r[commentsKey] : '' }))
+        .filter(x=>x.c && String(x.c).trim().length>0)
+        .sort((a,b)=> b.ts - a.ts);
+      renderComments();
+    }
+
+    function renderComments(){
+      const start = (commentsPage-1)*commentsPerPage, end = start+commentsPerPage;
+      const page = commentsRows.slice(start,end);
+      document.getElementById('commentsBody').innerHTML =
+        page.map(r=>`<tr><td>${fmtDate(r.d)}</td><td>${r.s||''}</td><td>${String(r.c)}</td></tr>`).join('');
+      const totalPages = Math.ceil((commentsRows.length||1)/commentsPerPage);
+      document.getElementById('commentsPageInfo').textContent = `Pagina ${commentsPage} di ${totalPages} (${commentsRows.length} commenti)`;
+      document.getElementById('commentsPrevBtn').disabled = commentsPage===1;
+      document.getElementById('commentsNextBtn').disabled = commentsPage===totalPages;
+    }
+    function commentsPrev(){ if(commentsPage>1){ commentsPage--; renderComments(); } }
+    function commentsNext(){
+      const totalPages = Math.ceil((commentsRows.length||1)/commentsPerPage);
+      if(commentsPage<totalPages){ commentsPage++; renderComments(); }
+    }
+
+    // charts (P2)
+    function drawDonut(canvasId, labels, values, nps){
+      if(charts[canvasId]) charts[canvasId].destroy();
+      const ctx = document.getElementById(canvasId);
+      charts[canvasId] = new Chart(ctx,{
+        type:'doughnut',
+        data:{ labels, datasets:[{ data:values, borderWidth:0, backgroundColor:['#6ee7b7','#fbbf24','#7f1d1d']}] },
+        options:{ responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{ legend:{ position:'bottom'} } }
+      });
+      const old = ctx.parentElement.querySelector('.centerLabel'); if(old) old.remove();
+      const div = document.createElement('div');
+      div.className='centerLabel';
+      div.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:42px';
+      div.textContent = `${nps}%`;
+      ctx.parentElement.style.position='relative';
+      ctx.parentElement.appendChild(div);
+    }
+    function drawTrendSurvey(id, labels, npsData, counts){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar',
+        data:{ labels, datasets:[
+          { label:'Numero risposte', data:counts, backgroundColor:'rgba(102,126,234,.5)', yAxisID:'y' },
+          { label:'NPS', data:npsData, type:'line', borderColor:'#7f1d1d', backgroundColor:'transparent', yAxisID:'y1' }
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{ position:'bottom' },
+            tooltip:{ callbacks:{
+              label: (ctx)=>{
+                if(ctx.dataset.type==='line'||ctx.dataset.label==='NPS') return `NPS: ${ctx.parsed.y}%`;
+                if(ctx.dataset.label==='Numero risposte') return `Risposte: ${ctx.parsed.y}`;
+              },
+              afterBody: (items)=>{
+                const i = items[0].dataIndex;
+                return `Totale risposte: ${counts[i]}`;
+              }
+            }}},
+          scales:{ y:{ beginAtZero:true }, y1:{ beginAtZero:true, max:100, position:'right', ticks:{callback:v=>v+'%'} } }
         }
-
-        function showDashboard() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboardContainer').classList.add('authenticated');
-        }
-
-        function logout() {
-            if (confirm('Sei sicuro di voler uscire?')) {
-                sessionStorage.removeItem('authenticated');
-                location.reload();
-            }
-        }
-
-        function loadDataFromScript() {
-            showLoading(true);
-            updateStatus('loading', 'Caricamento in corso...');
-            hideError();
-            hideSuccess();
-
-            const refreshBtn = document.getElementById('refreshBtn');
-            refreshBtn.disabled = true;
-
-            // Fetch JSON da Google Apps Script
-            fetch(SCRIPT_URL)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Dati ricevuti:', data);
-                    
-                    if (!Array.isArray(data) || data.length === 0) {
-                        throw new Error('Nessun dato ricevuto dal foglio');
-                    }
-
-                    allData = processData(data);
-                    
-                    if (allData.length === 0) {
-                        throw new Error('I dati ricevuti non sono nel formato corretto');
-                    }
-                    
-                    filteredData = [...allData];
-                    
-                    initializeFilters();
-                    resetFilters();
-                    applyFilters();
-                    
-                    updateStatus('connected', `${allData.length} recensioni caricate`);
-                    document.getElementById('lastUpdate').textContent = 
-                        `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
-                    
-                    showSuccess(`✅ Dashboard aggiornata! ${allData.length} recensioni caricate.`);
-                    showLoading(false);
-                    refreshBtn.disabled = false;
-                })
-                .catch(error => {
-                    console.error('Errore caricamento:', error);
-                    showError(`❌ Errore nel caricamento dei dati: ${error.message}`);
-                    updateStatus('error', 'Errore caricamento');
-                    showLoading(false);
-                    refreshBtn.disabled = false;
-                });
-        }
-
-        function processData(data) {
-            return data.map(row => ({
-                Data: formatDate(row.Data || row.data || ''),
-                Week: parseInt(row.Week || row.week || 0),
-                'Punto vendita': row['Punto vendita'] || row.punto_vendita || row.store || '',
-                sourceFrom: row.sourceFrom || row.sourcefrom || row.source || '',
-                voto: parseInt(row.voto || row.rating || 0),
-                testo: row.testo || row.text || row.recensione || '',
-                TOPIC: row.TOPIC || row.topic || 'NESSUN TESTO'
-            })).filter(row => row.voto > 0 && row['Punto vendita']); // Rimuovi righe invalide
-        }
-
-        function formatDate(dateValue) {
-            if (!dateValue) return '';
-            
-            // Se è già una stringa formattata, restituiscila
-            if (typeof dateValue === 'string' && dateValue.includes('/')) {
-                return dateValue;
-            }
-            
-            // Se è un numero (serial date di Google Sheets)
-            if (typeof dateValue === 'number') {
-                const date = new Date((dateValue - 25569) * 86400 * 1000);
-                return date.toLocaleDateString('it-IT');
-            }
-            
-            // Prova a parsare come data
-            const date = new Date(dateValue);
-            if (!isNaN(date.getTime())) {
-                return date.toLocaleDateString('it-IT');
-            }
-            
-            return dateValue;
-        }
-
-        function updateStatus(status, text) {
-            const indicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            
-            indicator.className = `status-indicator ${status}`;
-            statusText.textContent = text;
-        }
-
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('active');
-            
-            setTimeout(() => {
-                errorDiv.classList.remove('active');
-            }, 10000);
-        }
-
-        function hideError() {
-            document.getElementById('errorMessage').classList.remove('active');
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.classList.add('active');
-            
-            setTimeout(() => {
-                successDiv.classList.remove('active');
-            }, 5000);
-        }
-
-        function hideSuccess() {
-            document.getElementById('successMessage').classList.remove('active');
-        }
-
-        function initializeFilters() {
-            const topics = [...new Set(allData.map(d => d.TOPIC))].sort();
-            const stores = [...new Set(allData.map(d => d['Punto vendita']))].sort();
-            const weeks = [...new Set(allData.map(d => d.Week))].sort((a, b) => a - b);
-            const platforms = [...new Set(allData.map(d => d.sourceFrom))].sort();
-            const ratings = [1, 2, 3, 4, 5];
-
-            createFilterCheckboxes('topicFilters', topics, 'topic');
-            createFilterCheckboxes('storeFilters', stores, 'store');
-            createFilterCheckboxes('weekFilters', weeks, 'week');
-            createFilterCheckboxes('platformFilters', platforms, 'platform');
-            createFilterCheckboxes('ratingFilters', ratings, 'rating');
-        }
-
-        function createFilterCheckboxes(containerId, items, filterType) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = items.map(item => `
-                <div class="filter-option">
-                    <input type="checkbox" id="${filterType}_${item}" value="${item}" checked>
-                    <label for="${filterType}_${item}">${item} (${countItems(filterType, item)})</label>
-                </div>
-            `).join('');
-        }
-
-        function countItems(filterType, value) {
-            const fieldMap = {
-                'topic': 'TOPIC',
-                'store': 'Punto vendita',
-                'week': 'Week',
-                'platform': 'sourceFrom',
-                'rating': 'voto'
-            };
-            const field = fieldMap[filterType];
-            return allData.filter(d => d[field] == value).length;
-        }
-
-        function selectAll(filterType) {
-            document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]`).forEach(cb => cb.checked = true);
-        }
-
-        function selectNone(filterType) {
-            document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]`).forEach(cb => cb.checked = false);
-        }
-
-        function toggleFilters() {
-            const content = document.getElementById('filterContent');
-            const toggle = document.getElementById('filterToggle');
-            content.classList.toggle('active');
-            toggle.textContent = content.classList.contains('active') ? '▲' : '▼';
-        }
-
-        function resetFilters() {
-            ['topic', 'store', 'week', 'platform', 'rating'].forEach(selectAll);
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const selectedTopics = getSelectedValues('topic');
-            const selectedStores = getSelectedValues('store');
-            const selectedWeeks = getSelectedValues('week');
-            const selectedPlatforms = getSelectedValues('platform');
-            const selectedRatings = getSelectedValues('rating');
-
-            filteredData = allData.filter(d => 
-                selectedTopics.includes(d.TOPIC) &&
-                selectedStores.includes(d['Punto vendita']) &&
-                selectedWeeks.includes(String(d.Week)) &&
-                selectedPlatforms.includes(d.sourceFrom) &&
-                selectedRatings.includes(String(d.voto))
-            );
-
-            currentPage = 1;
-            updateDashboard();
-        }
-
-        function getSelectedValues(filterType) {
-            return Array.from(document.querySelectorAll(`#${filterType}Filters input[type="checkbox"]:checked`))
-                .map(cb => cb.value);
-        }
-
-        function updateDashboard() {
-            updateKPIs();
-            updateTopicCounter();
-            updateCharts();
-            updateTable();
-        }
-
-        function updateKPIs() {
-            const total = filteredData.length;
-            const avgRating = total > 0 ? (filteredData.reduce((sum, d) => sum + d.voto, 0) / total).toFixed(2) : '0.00';
-            const positive = filteredData.filter(d => d.voto >= 4).length;
-            const negative = filteredData.filter(d => d.voto <= 2).length;
-
-            document.getElementById('kpiSection').innerHTML = `
-                <div class="kpi-card">
-                    <div class="kpi-title">Totale Recensioni</div>
-                    <div class="kpi-value">${total.toLocaleString()}</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Voto Medio</div>
-                    <div class="kpi-value">${avgRating} ⭐</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Recensioni Positive (4-5★)</div>
-                    <div class="kpi-value">${positive.toLocaleString()}</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">Recensioni Negative (1-2★)</div>
-                    <div class="kpi-value">${negative.toLocaleString()}</div>
-                </div>
-            `;
-        }
-
-        function updateTopicCounter() {
-            // Calcola statistiche per topic (escludendo "NESSUN TESTO")
-            const topicStats = {};
-            filteredData.forEach(d => {
-                const topic = d.TOPIC;
-                // Escludi "NESSUN TESTO" dal counter
-                if (topic.toUpperCase() === 'NESSUN TESTO') return;
-                
-                if (!topicStats[topic]) {
-                    topicStats[topic] = { count: 0, totalRating: 0 };
-                }
-                topicStats[topic].count++;
-                topicStats[topic].totalRating += d.voto;
-            });
-
-            // Converti in array e calcola media voto
-            const topicsArray = Object.keys(topicStats).map(topic => ({
-                name: topic,
-                count: topicStats[topic].count,
-                avgRating: (topicStats[topic].totalRating / topicStats[topic].count).toFixed(2)
-            }));
-
-            // Ordina per numero recensioni (decrescente)
-            topicsArray.sort((a, b) => b.count - a.count);
-
-            // Prendi i top 6 topic
-            const topTopics = topicsArray.slice(0, 6);
-
-            // Genera HTML
-            const container = document.getElementById('topicCounterGrid');
-            container.innerHTML = topTopics.map((topic, index) => {
-                const rankClass = index === 0 ? 'top-1' : index === 1 ? 'top-2' : index === 2 ? 'top-3' : '';
-                return `
-                    <div class="topic-counter-card ${rankClass}">
-                        <div class="topic-rank">${index + 1}</div>
-                        <div class="topic-counter-name">${topic.name}</div>
-                        <div class="topic-counter-stats">
-                            <div class="topic-stat">
-                                <div class="topic-stat-label">Recensioni</div>
-                                <div class="topic-stat-value">${topic.count}</div>
-                            </div>
-                            <div class="topic-stat-divider"></div>
-                            <div class="topic-stat">
-                                <div class="topic-stat-label">Voto Medio</div>
-                                <div class="topic-stat-value rating">${topic.avgRating} ⭐</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateCharts() {
-            updateTopicChart();
-            updateRatingChart();
-            updateStoreChart();
-            updateTrendChart();
-            updateTopicRatingChart();
-            updatePlatformChart();
-        }
-
-        function updateTopicChart() {
-            const topicCounts = {};
-            filteredData.forEach(d => {
-                topicCounts[d.TOPIC] = (topicCounts[d.TOPIC] || 0) + 1;
-            });
-
-            const ctx = document.getElementById('topicChart');
-            if (charts.topic) charts.topic.destroy();
-            
-            charts.topic = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(topicCounts),
-                    datasets: [{
-                        data: Object.values(topicCounts),
-                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        }
-
-        function updateRatingChart() {
-            const ratingCounts = [1, 2, 3, 4, 5].map(r => 
-                filteredData.filter(d => d.voto === r).length
-            );
-
-            const ctx = document.getElementById('ratingChart');
-            if (charts.rating) charts.rating.destroy();
-            
-            charts.rating = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
-                    datasets: [{
-                        label: 'Numero Recensioni',
-                        data: ratingCounts,
-                        backgroundColor: '#764ba2'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
-        }
-
-        function updateStoreChart() {
-            const storeData = {};
-            filteredData.forEach(d => {
-                if (!storeData[d['Punto vendita']]) {
-                    storeData[d['Punto vendita']] = { total: 0, sum: 0 };
-                }
-                storeData[d['Punto vendita']].total++;
-                storeData[d['Punto vendita']].sum += d.voto;
-            });
-
-            const stores = Object.keys(storeData).map(store => ({
-                name: store,
-                avg: storeData[store].sum / storeData[store].total
-            })).sort((a, b) => b.avg - a.avg);
-
-            const colors = stores.map((_, i) => i < 15 ? '#764ba2' : '#b794d6');
-
-            // Calcola altezza dinamica: 30px per ogni locale + padding
-            const chartHeight = Math.max(400, stores.length * 30);
-            const chartWrapper = document.getElementById('storeChart').parentElement;
-            chartWrapper.style.height = chartHeight + 'px';
-
-            const ctx = document.getElementById('storeChart');
-            if (charts.store) charts.store.destroy();
-            
-            charts.store = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: stores.map(s => s.name),
-                    datasets: [{
-                        label: 'Voto Medio',
-                        data: stores.map(s => s.avg),
-                        backgroundColor: colors
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Voto Medio: ' + context.parsed.x.toFixed(2) + ' ⭐';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            beginAtZero: true, 
-                            max: 5,
-                            ticks: {
-                                font: { size: 12 }
-                            }
-                        },
-                        y: {
-                            ticks: {
-                                font: { size: 11 },
-                                autoSkip: false  // Mostra tutti i nomi
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 10,
-                            top: 10,
-                            bottom: 10
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateTrendChart() {
-            const selector = document.getElementById('trendSelector').value;
-            const data = selector === 'total' 
-                ? filteredData 
-                : filteredData.filter(d => d.TOPIC === selector);
-
-            const weekData = {};
-            data.forEach(d => {
-                if (!weekData[d.Week]) {
-                    weekData[d.Week] = { count: 0, sum: 0 };
-                }
-                weekData[d.Week].count++;
-                weekData[d.Week].sum += d.voto;
-            });
-
-            const weeks = Object.keys(weekData).sort((a, b) => a - b);
-            const counts = weeks.map(w => weekData[w].count);
-            const avgs = weeks.map(w => weekData[w].sum / weekData[w].count);
-
-            const ctx = document.getElementById('trendChart');
-            if (charts.trend) charts.trend.destroy();
-            
-            charts.trend = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: weeks.map(w => `W${w}`),
-                    datasets: [{
-                        label: 'Numero Recensioni',
-                        data: counts,
-                        backgroundColor: 'rgba(102, 126, 234, 0.5)',
-                        yAxisID: 'y'
-                    }, {
-                        label: 'Voto Medio',
-                        data: avgs,
-                        type: 'line',
-                        borderColor: '#f093fb',
-                        backgroundColor: 'transparent',
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, position: 'left' },
-                        y1: { beginAtZero: true, max: 5, position: 'right' }
-                    }
-                }
-            });
-        }
-
-        function updateTopicRatingChart() {
-            const topics = [...new Set(filteredData.map(d => d.TOPIC))];
-            const avgs = topics.map(topic => {
-                const data = filteredData.filter(d => d.TOPIC === topic);
-                return data.length > 0 ? data.reduce((sum, d) => sum + d.voto, 0) / data.length : 0;
-            });
-
-            const ctx = document.getElementById('topicRatingChart');
-            if (charts.topicRating) charts.topicRating.destroy();
-            
-            charts.topicRating = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: topics,
-                    datasets: [{
-                        label: 'Voto Medio',
-                        data: avgs,
-                        backgroundColor: '#764ba2'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, max: 5 }
-                    }
-                }
-            });
-        }
-
-        function updatePlatformChart() {
-            const platformCounts = {};
-            filteredData.forEach(d => {
-                platformCounts[d.sourceFrom] = (platformCounts[d.sourceFrom] || 0) + 1;
-            });
-
-            const ctx = document.getElementById('platformChart');
-            if (charts.platform) charts.platform.destroy();
-            
-            charts.platform = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(platformCounts),
-                    datasets: [{
-                        data: Object.values(platformCounts),
-                        backgroundColor: ['#667eea', '#764ba2', '#f093fb']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-        }
-
-        function updateTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const displayData = filteredData.filter(d => 
-                d.testo.toLowerCase().includes(searchTerm)
-            );
-
-            const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageData = displayData.slice(start, end);
-
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = pageData.map(d => `
-                <tr>
-                    <td>${d.Data}</td>
-                    <td>${d['Punto vendita']}</td>
-                    <td><span class="stars">${'⭐'.repeat(d.voto)}</span></td>
-                    <td>${d.TOPIC}</td>
-                    <td><div class="text-preview" onclick="this.classList.toggle('expanded')">${d.testo || 'Nessun testo'}</div></td>
-                </tr>
-            `).join('');
-
-            const totalPages = Math.ceil(displayData.length / rowsPerPage);
-            document.getElementById('pageInfo').textContent = `Pagina ${currentPage} di ${totalPages || 1} (${displayData.length} recensioni)`;
-            document.getElementById('prevBtn').disabled = currentPage === 1;
-            document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
-        }
-
-        function filterTable() {
-            currentPage = 1;
-            updateTable();
-        }
-
-        function previousPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                updateTable();
-            }
-        }
-
-        function nextPage() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const displayData = filteredData.filter(d => 
-                d.testo.toLowerCase().includes(searchTerm)
-            );
-            const totalPages = Math.ceil(displayData.length / rowsPerPage);
-            
-            if (currentPage < totalPages) {
-                currentPage++;
-                updateTable();
-            }
-        }
-    </script>
+      });
+    }
+    function drawBarH_survey(id, labels, npsValues, counts, max=100){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'NPS', data:npsValues, backgroundColor:'#7f1d1d' }] },
+        options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false},
+            tooltip:{ callbacks:{
+              label: (ctx)=> `NPS: ${ctx.parsed.x}%`,
+              afterBody: (items)=>{ const i=items[0].dataIndex; return `Risposte: ${counts[i]}`; }
+            }}},
+          scales:{ x:{ beginAtZero:true, max, ticks:{ callback:(v)=> v+'%' } } } }
+      });
+    }
+    function drawBar_survey(id, labels, data){
+      if(charts[id]) charts[id].destroy();
+      charts[id] = new Chart(document.getElementById(id), {
+        type:'bar',
+        data:{ labels, datasets:[{ data, backgroundColor:'#f59e0b' }] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{ label:(c)=> c.parsed.y.toLocaleString('it-IT')}}},
+          scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+  </script>
 </body>
 </html>
