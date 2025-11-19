@@ -21,6 +21,7 @@
     .container{max-width:1400px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;display:none}
     .container.authenticated{display:block}
     .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:30px;text-align:center;position:relative}
+    .header.google-race{background:linear-gradient(135deg,#f59e0b 0%,#ea580c 100%)}
     .btn-logout{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:5px;padding:8px 15px;cursor:pointer}
     .header-info{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:10px}
     .connection-status{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.2);padding:8px 15px;border-radius:20px;font-size:.9em}
@@ -65,6 +66,23 @@
     .topic-stat{flex:1;text-align:center}.topic-stat-label{font-size:.85em;color:#6b7280}
     .topic-stat-value{font-size:1.6em;font-weight:800;color:#764ba2}.topic-stat-value.rating{color:#f59e0b}
 
+    /* Google Race Table */
+    .google-race-table{width:100%;border-collapse:collapse;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.1);border-radius:8px;overflow:hidden}
+    .google-race-table thead{background:linear-gradient(135deg,#f59e0b 0%,#ea580c 100%);color:#fff}
+    .google-race-table th,.google-race-table td{padding:12px;text-align:center;border:1px solid #e5e7eb}
+    .google-race-table th{font-weight:700;position:sticky;top:0;z-index:10}
+    .google-race-table tbody tr:hover{background:#fffbeb}
+    .google-race-table td.store-name{text-align:left;font-weight:600;background:#fffbeb;position:sticky;left:0;z-index:5}
+    .google-race-cell{display:flex;flex-direction:column;align-items:center;gap:4px}
+    .google-race-count{font-weight:700;font-size:1.1em}
+    .google-race-avg{font-size:.9em;color:#6b7280}
+    .objective-col{background:#f97316;color:#fff;font-weight:700}
+    .total-col{background:#fbbf24;font-weight:700}
+    .cell-success{background:#d1fae5;color:#065f46}
+    .cell-warning{background:#fef3c7;color:#92400e}
+    .cell-danger{background:#fee2e2;color:#991b1b}
+    .cell-neutral{background:#f3f4f6;color:#6b7280}
+
     .charts-section{padding:30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:30px}
     .chart-container{background:#fff;padding:20px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,.08)}
     .chart-wrapper{position:relative;height:300px}
@@ -102,6 +120,12 @@
     .filter-group--survey{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
     .apply-filters--survey{background:#7f1d1d;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
     .reset-filters--survey{background:#6b7280;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
+
+    /* Google Race KPIs */
+    .race-kpi-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:20px;background:#fff}
+    .race-kpi-card{background:linear-gradient(135deg,#f59e0b 0%,#ea580c 100%);color:#fff;padding:20px;border-radius:12px;text-align:center}
+    .race-kpi-label{font-size:.9em;opacity:.9;margin-bottom:8px}
+    .race-kpi-value{font-size:2em;font-weight:800}
   </style>
 </head>
 <body>
@@ -109,6 +133,7 @@
   <nav class="tabbar" id="tabbar">
     <button class="tablink active" data-page="platform" onclick="switchPage('platform')">Recensioni Piattaforme</button>
     <button class="tablink" data-page="survey" onclick="switchPage('survey')">Recensioni Sondaggio</button>
+    <button class="tablink" data-page="google-race" onclick="switchPage('google-race')">🏆 Gara Google</button>
   </nav>
   <div class="subheader" id="subheader"><span class="tag">Suggerimento</span> <span id="subheaderText">Stai visualizzando le recensioni dalle piattaforme.</span></div>
 
@@ -293,7 +318,7 @@
             <div class="tile soft"><h4 class="caps">Numero risposte</h4><div class="big" id="kpiResponses">–</div></div>
             <div class="tile soft"><h4 class="caps">Età media</h4><div class="big" id="kpiAge">–</div></div>
             <div class="tile"><h4>Qualità della pizza [1:5]</h4><div class="big" id="kpiPizza">–</div></div>
-            <div class="tile"><h4>Qualità dell’impasto [1:5]</h4><div class="big" id="kpiImpasto">–</div></div>
+            <div class="tile"><h4>Qualità dell'impasto [1:5]</h4><div class="big" id="kpiImpasto">–</div></div>
             <div class="tile"><h4>Qualità degli ingredienti [1:5]</h4><div class="big" id="kpiIngredienti">–</div></div>
             <div class="tile"><h4>Valutazione atmosfera [1:5]</h4><div class="big" id="kpiAtmosfera">–</div></div>
             <div class="tile"><h4>Velocità del servizio [1:5]</h4><div class="big" id="kpiVelocita">–</div></div>
@@ -343,12 +368,33 @@
     </div>
   </div>
 
+  <!-- PAGINA 3: GARA GOOGLE -->
+  <div class="page" id="page-google-race">
+    <div class="container" id="googleRaceContainer">
+      <div class="header google-race">
+        <button class="btn-logout" onclick="logout()">🚪 Esci</button>
+        <h1>🏆 Gara Recensioni Google (dalla W44)</h1>
+        <div class="header-info">
+          <div class="connection-status"><div class="status-indicator loading" id="raceStatusIndicator"></div><span id="raceStatusText">In attesa caricamento</span></div>
+          <button class="refresh-btn" id="raceRefreshBtn" style="color:#ea580c" onclick="refreshPlatform()">🔄 Aggiorna Dati</button>
+        </div>
+        <div id="raceLastUpdate" style="margin-top:6px;font-size:.9em"></div>
+      </div>
+
+      <div class="race-kpi-section" id="raceKpiSection"></div>
+
+      <div style="padding:30px;background:#fff">
+        <div id="googleRaceTableContainer" style="overflow-x:auto"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* ================= CONFIG ================= */
     const CORRECT_PASSWORD = '2912A';
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrJPNYBWhkyXJn7PJnvADHwUBNxyhE_hDx7CsgCrx1dY5EJdMrylsryVQJT25IdtE9/exec';
-    const SHEET1_URL = () => SCRIPT_URL + '?_cb=' + Date.now();          // piattaforme (foglio 1)
-    const SHEET2_URL = () => SCRIPT_URL + '?sheet=2&_cb=' + Date.now();   // sondaggio  (foglio 2)
+    const SHEET1_URL = () => SCRIPT_URL + '?_cb=' + Date.now();
+    const SHEET2_URL = () => SCRIPT_URL + '?sheet=2&_cb=' + Date.now();
 
     /* ============= STORE-ID → NOME (mappa completa) ============= */
     const STORE_NAME = {
@@ -363,6 +409,37 @@
     };
     const mapStore = v => { const s = String(v??'').trim(); return STORE_NAME[s] || s; };
 
+    /* ============= OBIETTIVI GARA GOOGLE ============= */
+    const GOOGLE_OBJECTIVES = {
+      'FDV MODENA': {avgTarget: 4.5, quarterlyMin: 75},
+      'FDV MILANO CITYLIFE': {avgTarget: 4.5, quarterlyMin: 75},
+      'FDV PARMA': {avgTarget: 4.5, quarterlyMin: 75},
+      'FDV ROMA PARIOLI': {avgTarget: 4.6, quarterlyMin: 100},
+      'FDV MONZA': {avgTarget: 4.7, quarterlyMin: 75},
+      'FDV MILANO SEMPIONE': {avgTarget: 4.5, quarterlyMin: 100},
+      'FDV BOLOGNA S.STEFANO': {avgTarget: 4.3, quarterlyMin: 75},
+      'FDV RIMINI': {avgTarget: 4.5, quarterlyMin: 100},
+      'FDV GENOVA CASTELLO': {avgTarget: 4.6, quarterlyMin: 125},
+      'FDV BRESCIA CENTRO': {avgTarget: 4.6, quarterlyMin: 75},
+      'FDV MILANO BICOCCA': {avgTarget: 4.6, quarterlyMin: 50},
+      'FDV TORINO CARLINA': {avgTarget: 4.7, quarterlyMin: 90},
+      'FDV MILANO PREMUDA': {avgTarget: 4.5, quarterlyMin: 50},
+      'FDV TORINO IV MARZO': {avgTarget: 4.6, quarterlyMin: 90},
+      'FDV ROMA TRASTEVERE': {avgTarget: 4.8, quarterlyMin: 125},
+      'FDV NOVARA': {avgTarget: 4.5, quarterlyMin: 90},
+      'FDV ARESE': {avgTarget: 4.2, quarterlyMin: 50},
+      'FDV VARESE': {avgTarget: 4.5, quarterlyMin: 50},
+      'FDV ALESSANDRIA': {avgTarget: 4.5, quarterlyMin: 90},
+      'FDV ROMA OSTIENSE': {avgTarget: 4.6, quarterlyMin: 80},
+      'FDV GENOVA MARE': {avgTarget: 4.3, quarterlyMin: 100},
+      'FDV TORINO VANCHIGLIA': {avgTarget: 4.6, quarterlyMin: 90},
+      'FDV TORINO GM': {avgTarget: 4.6, quarterlyMin: 80},
+      'FDV MILANO PORTA VENEZIA': {avgTarget: 4.7, quarterlyMin: 60},
+      'FDV ASTI': {avgTarget: 4.7, quarterlyMin: 100},
+      'FDV TORINO SAN SALVARIO': {avgTarget: 4.8, quarterlyMin: 125},
+      'FDV MILANO ISOLA': {avgTarget: 4.5, quarterlyMin: 50}
+    };
+
     /* ================= STATE ================= */
     let platformAll = [], platformFiltered = [];
     let surveyAll = [], surveyFiltered = [], surveyHeaders = [], surveyDateKey = null, surveyStoreKey = null;
@@ -371,38 +448,41 @@
     let commentsPage = 1, commentsPerPage = 50, commentsRows = [];
 
     /* ================= LOGIN FLOW ================= */
-    // 🔒 NIENTE auto-login: password richiesta sempre all'apertura
     async function checkPassword(e){
       e.preventDefault();
       const ok = document.getElementById('passwordInput').value === CORRECT_PASSWORD;
       if(!ok){ const el = document.getElementById('errorMessageLogin'); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3000); return;}
-      await showDashboard();          // mostra UI
-      await loadAllDataOnce();        // 🔹 singolo caricamento dati all'avvio
+      await showDashboard();
+      await loadAllDataOnce();
     }
 
     async function showDashboard(){
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('dashboardContainer').classList.add('authenticated');
       document.getElementById('surveyContainer').classList.add('authenticated');
+      document.getElementById('googleRaceContainer').classList.add('authenticated');
       document.getElementById('tabbar').style.display='flex';
       document.getElementById('subheader').style.display='block';
       setSubheader('platform');
     }
 
-    function logout(){ location.reload(); } // ritorna alla schermata password
+    function logout(){ location.reload(); }
     function showLoading(s){ document.getElementById('loadingOverlay').classList.toggle('active',s); }
     function setSubheader(which){
-      document.getElementById('subheaderText').textContent =
-        which==='platform'
+      const text = which==='platform' 
         ? 'Stai visualizzando le recensioni dalle piattaforme. Usa i filtri (Anno/Week ISO) e il focus Trend.'
-        : 'Stai visualizzando le recensioni del sondaggio (Foglio 2). Filtra per Anno, Store e Week ISO.';
+        : which==='survey'
+        ? 'Stai visualizzando le recensioni del sondaggio (Foglio 2). Filtra per Anno, Store e Week ISO.'
+        : 'Confronto tra obiettivi e risultati effettivi per le recensioni Google dalla settimana 44.';
+      document.getElementById('subheaderText').textContent = text;
     }
     function switchPage(which){
       document.querySelectorAll('.tablink').forEach(b=>b.classList.toggle('active',b.dataset.page===which));
       document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id===`page-${which}`));
       setSubheader(which);
-      // 🔹 nessun fetch qui: solo render locale
-      if(which==='survey'){ renderSurveyAll(); } else { updateDashboard(); }
+      if(which==='survey'){ renderSurveyAll(); } 
+      else if(which==='google-race'){ renderGoogleRace(); }
+      else { updateDashboard(); }
     }
 
     /* ================= DATE / SORT HELPERS ================= */
@@ -431,6 +511,7 @@
       try{
         updateStatus('loading','Carico dati piattaforme…');
         surveyUpdateStatus('loading','Carico dati sondaggio…');
+        raceUpdateStatus('loading','Carico dati gara…');
         const [plat, surv] = await Promise.all([ fetchJSON(SHEET1_URL()), fetchJSON(SHEET2_URL()) ]);
 
         // Pagina 1
@@ -449,17 +530,20 @@
         surveyFiltered = [...surveyAll];
         initSurveyFilters();
         renderSurveyAll();
-
         surveyUpdateStatus('connected', `${surveyAll.length} righe caricate (Foglio 2)`);
         document.getElementById('surveyLastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+
+        // Pagina 3
+        renderGoogleRace();
+        raceUpdateStatus('connected', 'Dati gara caricati');
+        document.getElementById('raceLastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
       }catch(err){
         showError('Piattaforme: '+err.message);
         surveyShowError('Sondaggio: '+err.message);
-        updateStatus('error','Errore'); surveyUpdateStatus('error','Errore');
+        updateStatus('error','Errore'); surveyUpdateStatus('error','Errore'); raceUpdateStatus('error','Errore');
       }finally{ showLoading(false); }
     }
 
-    // 🔁 Aggiorna SOLO su click
     async function refreshPlatform(){
       const btn = document.getElementById('refreshBtn');
       try{
@@ -470,6 +554,11 @@
         populateTrendTopicSelect();
         updateStatus('connected', `${platformAll.length} recensioni caricate`);
         document.getElementById('lastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
+        
+        // Aggiorna anche gara
+        renderGoogleRace();
+        raceUpdateStatus('connected', 'Dati gara aggiornati');
+        document.getElementById('raceLastUpdate').textContent = `Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
       }catch(err){ showError(err.message); updateStatus('error','Errore'); }
       finally{ btn.disabled=false; showLoading(false); }
     }
@@ -495,6 +584,7 @@
     async function fetchJSON(url){ const r = await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }
     function updateStatus(s,t){ const i=document.getElementById('statusIndicator'); i.className='status-indicator '+s; document.getElementById('statusText').textContent=t; }
     function surveyUpdateStatus(s,t){ const i=document.getElementById('surveyStatusIndicator'); i.className='status-indicator '+s; document.getElementById('surveyStatusText').textContent=t; }
+    function raceUpdateStatus(s,t){ const i=document.getElementById('raceStatusIndicator'); i.className='status-indicator '+s; document.getElementById('raceStatusText').textContent=t; }
     function showError(m){ const e=document.getElementById('errorMessage'); if(!e) return; e.textContent=m; e.classList.add('active'); setTimeout(()=>e.classList.remove('active'),8000); }
     function surveyShowError(m){ const e=document.getElementById('surveyError'); e.textContent=m; e.style.display='block'; setTimeout(()=>e.style.display='none',8000); }
 
@@ -612,22 +702,19 @@
             <div class="topic-stat"><div class="topic-stat-label">Voto Medio</div><div class="topic-stat-value rating">${t.avg} ⭐</div></div>
           </div></div>`).join('');
     }
+
     function updateCharts(){
-      // topic pie
       const topicCounts = {}; platformFiltered.forEach(d=>topicCounts[d.TOPIC]=(topicCounts[d.TOPIC]||0)+1);
       drawPie('topicChart', Object.keys(topicCounts), Object.values(topicCounts));
 
-      // rating bar
       const ratingCounts = [1,2,3,4,5].map(r=>platformFiltered.filter(d=>d.voto===r).length);
       drawBar('ratingChart', ['1⭐','2⭐','3⭐','4⭐','5⭐'], ratingCounts, false);
 
-      // store avg horizontal (tutti i negozi)
       const storeData = {};
       platformFiltered.forEach(d=>{ const s=mapStore(d['Punto vendita']); if(!storeData[s]) storeData[s]={c:0,som:0}; storeData[s].c++; storeData[s].som+=d.voto; });
       const stores = Object.keys(storeData).map(k=>({name:k,avg:storeData[k].som/storeData[k].c})).sort((a,b)=>b.avg-a.avg);
       drawBarH('storeChart', stores.map(s=>s.name), stores.map(s=>+s.avg.toFixed(2)), 5);
 
-      // trend week-year con selettore Topic
       const topicSel = document.getElementById('trendTopicSelect').value;
       const subset = topicSel==='__ALL__' ? platformFiltered : platformFiltered.filter(d=>d.TOPIC===topicSel);
       const wk = {};
@@ -639,12 +726,10 @@
       const counts = labels.map(k=>wk[k].c), avgs = labels.map(k=>wk[k].s/wk[k].c);
       drawComboTrend('trendChart', labels, counts, avgs);
 
-      // topic avg bar
       const tAvg = {}; platformFiltered.forEach(d=>{ if(!tAvg[d.TOPIC]) tAvg[d.TOPIC]={c:0,s:0}; tAvg[d.TOPIC].c++; tAvg[d.TOPIC].s+=d.voto; });
       const tNames = Object.keys(tAvg).sort(), tValues = tNames.map(k=>+(tAvg[k].s/tAvg[k].c).toFixed(2));
       drawBar('topicRatingChart', tNames, tValues, true);
 
-      // platform pie
       const pf = {}; platformFiltered.forEach(d=>pf[d.sourceFrom]=(pf[d.sourceFrom]||0)+1);
       drawPie('platformChart', Object.keys(pf), Object.values(pf));
     }
@@ -652,7 +737,7 @@
       const searchTerm = (document.getElementById('searchInput')?.value||'').toLowerCase();
       const disp = platformFiltered
         .filter(d => (d.testo||'').toLowerCase().includes(searchTerm))
-        .sort((a,b)=> b.ts - a.ts); // 🔹 più recenti in alto
+        .sort((a,b)=> b.ts - a.ts);
       const start = (currentPage-1)*rowsPerPage, end = start+rowsPerPage;
       const page = disp.slice(start,end);
       document.getElementById('tableBody').innerHTML = page.map(d=>`
@@ -707,9 +792,136 @@
       });
     }
 
-    /* ================= (P2) SONDAGGIO ================= */
+    /* ================= (P3) GARA GOOGLE ================= */
+    function renderGoogleRace(){
+      // Filtra solo Google dalla W44 in poi
+      const googleData = platformAll.filter(d => 
+        d.sourceFrom.toLowerCase().includes('google') && 
+        d.IsoWeek >= 44
+      );
 
-    // Helpers per mappare colonne per lettera
+      if(googleData.length === 0){
+        document.getElementById('googleRaceTableContainer').innerHTML = '<p style="text-align:center;color:#6b7280;padding:20px">Nessuna recensione Google dalla settimana 44</p>';
+        document.getElementById('raceKpiSection').innerHTML = '';
+        return;
+      }
+
+      // Raggruppa per store e week
+      const raceData = {};
+      googleData.forEach(d => {
+        const store = d['Punto vendita'];
+        const week = d.IsoWeek;
+        
+        if(!raceData[store]) raceData[store] = {};
+        if(!raceData[store][week]) raceData[store][week] = { count: 0, sum: 0 };
+        
+        raceData[store][week].count++;
+        raceData[store][week].sum += d.voto;
+      });
+
+      // Trova tutte le settimane uniche >= 44, ordinate
+      const allWeeks = [...new Set(googleData.map(d => d.IsoWeek))].sort((a,b) => a-b);
+      
+      // Store da escludere
+      const excludedStores = ['FDV CAGLIARI', 'FDV RIVOLI', 'FDV CASELECCHIO DI RENO', 'FDV CASALECCHIO'];
+      
+      // Calcola totali per store
+      const storesWithTotals = Object.keys(raceData)
+        .filter(store => !excludedStores.includes(store))
+        .map(store => {
+        let totalCount = 0;
+        let totalSum = 0;
+        Object.values(raceData[store]).forEach(weekData => {
+          totalCount += weekData.count;
+          totalSum += weekData.sum;
+        });
+        const totalAvg = totalCount > 0 ? (totalSum / totalCount) : 0;
+        const obj = GOOGLE_OBJECTIVES[store] || {avgTarget: 4.5, quarterlyMin: 75};
+        
+        return {
+          store,
+          totalCount,
+          totalAvg,
+          avgTarget: obj.avgTarget,
+          quarterlyMin: obj.quarterlyMin
+        };
+      }).sort((a, b) => b.totalCount - a.totalCount);
+
+      // KPIs
+      const totalReviews = storesWithTotals.reduce((s, st) => s + st.totalCount, 0);
+      const avgAll = totalReviews > 0 ? (googleData.reduce((s,d) => s + d.voto, 0) / totalReviews).toFixed(2) : '0.00';
+      const storesOnTarget = storesWithTotals.filter(st => st.totalAvg >= st.avgTarget && st.totalCount >= st.quarterlyMin).length;
+      
+      // Debug: Store con obiettivi ma senza recensioni
+      const allObjectiveStores = Object.keys(GOOGLE_OBJECTIVES).filter(s => !excludedStores.includes(s));
+      const storesWithData = storesWithTotals.map(st => st.store);
+      const missingStores = allObjectiveStores.filter(s => !storesWithData.includes(s));
+      
+      let debugHtml = '';
+      if(missingStores.length > 0) {
+        debugHtml = `<div class="race-kpi-card" style="background:#ef4444"><div class="race-kpi-label">⚠️ Store senza recensioni Google (dalla W44)</div><div class="race-kpi-value" style="font-size:1.2em">${missingStores.join(', ')}</div></div>`;
+      }
+      
+      document.getElementById('raceKpiSection').innerHTML = `
+        <div class="race-kpi-card"><div class="race-kpi-label">Recensioni Totali</div><div class="race-kpi-value">${totalReviews}</div></div>
+        <div class="race-kpi-card"><div class="race-kpi-label">Voto Medio</div><div class="race-kpi-value">${avgAll} ⭐</div></div>
+        <div class="race-kpi-card"><div class="race-kpi-label">Store su Obiettivo</div><div class="race-kpi-value">${storesOnTarget} / ${storesWithTotals.length}</div></div>
+        <div class="race-kpi-card"><div class="race-kpi-label">Store nella Gara</div><div class="race-kpi-value">${storesWithTotals.length} / ${allObjectiveStores.length}</div></div>
+        ${debugHtml}
+      `;
+
+      // Tabella
+      let html = '<table class="google-race-table">';
+      
+      // Header
+      html += '<thead><tr><th>Punto Vendita</th><th class="objective-col">Obiettivo<br>Voto Medio</th><th class="objective-col">Obiettivo<br>N° Trimestrale</th>';
+      allWeeks.forEach(w => {
+        html += `<th>W${String(w).padStart(2, '0')}</th>`;
+      });
+      html += '<th class="total-col">Totale</th><th class="total-col">Voto Medio</th></tr></thead><tbody>';
+
+      // Righe
+      storesWithTotals.forEach(({ store, totalCount, totalAvg, avgTarget, quarterlyMin }) => {
+        const avgOk = totalAvg >= avgTarget;
+        const countOk = totalCount >= quarterlyMin;
+        const allOk = avgOk && countOk;
+        
+        html += `<tr><td class="store-name">${store}</td>`;
+        html += `<td class="objective-col">${avgTarget.toFixed(1)}</td>`;
+        html += `<td class="objective-col">${quarterlyMin}</td>`;
+        
+        allWeeks.forEach(w => {
+          const weekData = raceData[store][w];
+          if(weekData){
+            const avg = (weekData.sum / weekData.count).toFixed(1);
+            const weekAvgOk = parseFloat(avg) >= avgTarget;
+            const cellClass = weekAvgOk ? 'cell-success' : 'cell-warning';
+            html += `<td class="${cellClass}"><div class="google-race-cell">
+              <span class="google-race-count">${weekData.count}</span>
+              <span class="google-race-avg">⭐ ${avg}</span>
+            </div></td>`;
+          } else {
+            html += '<td class="cell-neutral">—</td>';
+          }
+        });
+        
+        // Totale
+        const totalCellClass = allOk ? 'cell-success' : countOk ? 'cell-warning' : 'cell-danger';
+        html += `<td class="total-col ${totalCellClass}"><div class="google-race-cell">
+          <span class="google-race-count">${totalCount}</span>
+        </div></td>`;
+        
+        const avgCellClass = avgOk ? 'cell-success' : 'cell-danger';
+        html += `<td class="total-col ${avgCellClass}"><div class="google-race-cell">
+          <span class="google-race-avg">⭐ ${totalAvg.toFixed(2)}</span>
+        </div></td></tr>`;
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('googleRaceTableContainer').innerHTML = html;
+    }
+
+    /* ================= (P2) SONDAGGIO ================= */
     function letterToIndex(letter){ let n=0; letter=String(letter).toUpperCase(); for(let i=0;i<letter.length;i++){ n = n*26 + (letter.charCodeAt(i)-64);} return n-1; }
     function colKey(letter){ const idx = letterToIndex(letter); return surveyHeaders[idx] || null; }
     function avgCol(letter){
@@ -718,7 +930,6 @@
       return nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length) : null;
     }
 
-    // NPS: colonna N (0–10)
     function computeNPSBucketsUsingKey(key, rows = surveyFiltered){
       let p=0,n=0,d=0;
       if(!key) return {prom:0, neut:0, detr:0, tot:0, nps:0};
@@ -731,7 +942,6 @@
       return {prom:p, neut:n, detr:d, tot, nps: Math.round(((p/tot)-(d/tot))*100)};
     }
 
-    /* ===== FILTRI SONDAGGIO (Anno/Store/Week) ===== */
     function toggleSurveyFilters(){
       const c = document.getElementById('surveyFilterContent');
       const t = document.getElementById('surveyFilterToggle');
@@ -779,14 +989,12 @@
         const s = mapStore(r[surveyStoreKey]);
         return years.includes(String(year)) && stores.includes(String(s)) && weeks.includes(String(week));
       });
-      commentsPage = 1; // reset paginazione commenti
+      commentsPage = 1;
       renderSurveyAll();
     }
     function surveyResetFilters(){ surveySelectAll('year'); surveySelectAll('store'); surveySelectAll('week'); surveyApplyFilters(); }
 
-    /* ===== RENDER SONDAGGIO ===== */
     function renderSurveyAll(){
-      // KPI richiesti
       document.getElementById('kpiResponses').textContent = surveyFiltered.length.toLocaleString('it-IT');
       const setVal = (id, val)=> document.getElementById(id).textContent = (val==null? '–' : val.toFixed(2).replace('.', ','));
       const age = avgCol('C'); document.getElementById('kpiAge').textContent = (age==null? '–' : Math.round(age));
@@ -798,12 +1006,10 @@
       setVal('kpiQP',          avgCol('P'));
       setVal('kpiServizio',    avgCol('Q'));
 
-      // NPS (colonna N)
       const NPS_KEY = colKey('N');
       const buckets = computeNPSBucketsUsingKey(NPS_KEY, surveyFiltered);
       drawDonut('npsDonut', ['Promotori','Neutri','Detrattori'], [buckets.prom, buckets.neut, buckets.detr], buckets.nps);
 
-      // Andamento NPS per settimana ISO (tooltip con NPS + n risposte)
       const weekMap = {};
       for(const r of surveyFiltered){
         const {week, year} = isoWeekYear(r[surveyDateKey]);
@@ -821,7 +1027,6 @@
       });
       drawTrendSurvey('npsTrend', wkLabels, npsSeries, wkCounts);
 
-      // NPS per punto vendita (tooltip con NPS + n risposte)
       const byStore = {};
       for(const r of surveyFiltered){
         const name = mapStore(r[surveyStoreKey]);
@@ -835,7 +1040,6 @@
       }).sort((a,b)=>b.nps-a.nps);
       drawBarH_survey('npsByStore', storeRows.map(x=>x.name), storeRows.map(x=>x.nps), storeRows.map(x=>x.count), 100);
 
-      // Bucket età (da C)
       const ageBuckets = {};
       const ageKey = colKey('C');
       for(const r of surveyFiltered){
@@ -847,7 +1051,6 @@
       const ageCats = Object.keys(ageBuckets).sort((a,b)=> orderA.indexOf(a)-orderA.indexOf(b));
       drawBar_survey('ageBuckets', ageCats, ageCats.map(k=>ageBuckets[k]));
 
-      // Frequenza d’acquisto (se presente)
       const freqKey = surveyHeaders.find(h=>/frequenza/i.test(h)) || null;
       if(freqKey){
         const freqMap = {};
@@ -857,7 +1060,6 @@
         drawBar_survey('freqBuckets', freqCats, freqCats.map(k=>freqMap[k]));
       }
 
-      // Commenti (ordinati per data desc + paginazione)
       const commentsKey = surveyHeaders.find(h=>/comment/i.test(h)) || surveyHeaders.find(h=>/box.*comment/i.test(h)) || null;
       commentsRows = surveyFiltered
         .map(r=>({ ts: isoWeekYear(r[surveyDateKey]).ts, d: r[surveyDateKey], s: mapStore(r[surveyStoreKey]), c: commentsKey? r[commentsKey] : '' }))
@@ -882,7 +1084,6 @@
       if(commentsPage<totalPages){ commentsPage++; renderComments(); }
     }
 
-    // charts (P2)
     function drawDonut(canvasId, labels, values, nps){
       if(charts[canvasId]) charts[canvasId].destroy();
       const ctx = document.getElementById(canvasId);
