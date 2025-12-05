@@ -220,7 +220,7 @@
         <div class="chart-container"><h3>⭐ Distribuzione Voti</h3><div class="chart-wrapper"><canvas id="ratingChart"></canvas></div></div>
 
         <div class="chart-container" style="grid-column:1/-1"><h3>🏪 Voto Medio per Punto Vendita</h3>
-          <div class="chart-wrapper"><canvas id="storeChart"></canvas></div>
+          <div class="chart-wrapper" id="storeChartWrapper"><canvas id="storeChart"></canvas></div>
         </div>
 
         <!-- 🔹 Trend con selettore Focus Topic dentro il riquadro -->
@@ -713,6 +713,10 @@
       const storeData = {};
       platformFiltered.forEach(d=>{ const s=mapStore(d['Punto vendita']); if(!storeData[s]) storeData[s]={c:0,som:0}; storeData[s].c++; storeData[s].som+=d.voto; });
       const stores = Object.keys(storeData).map(k=>({name:k,avg:storeData[k].som/storeData[k].c})).sort((a,b)=>b.avg-a.avg);
+      
+      // Altezza dinamica: 35px per ogni store, minimo 300px
+      const storeChartHeight = Math.max(300, stores.length * 35);
+      document.getElementById('storeChartWrapper').style.height = storeChartHeight + 'px';
       drawBarH('storeChart', stores.map(s=>s.name), stores.map(s=>+s.avg.toFixed(2)), 5);
 
       const topicSel = document.getElementById('trendTopicSelect').value;
