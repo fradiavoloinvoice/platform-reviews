@@ -800,9 +800,9 @@
     function renderGoogleRace(){
       // Filtra solo Google dalla W44 in poi
       const googleData = platformAll.filter(d => 
-        d.sourceFrom.toLowerCase().includes('google') && 
-        d.IsoWeek >= 44
-      );
+  d.sourceFrom.toLowerCase().includes('google') && 
+  (d.IsoYear > 2025 || (d.IsoYear === 2025 && d.IsoWeek >= 44))
+);
 
       if(googleData.length === 0){
         document.getElementById('googleRaceTableContainer').innerHTML = '<p style="text-align:center;color:#6b7280;padding:20px">Nessuna recensione Google dalla settimana 44</p>';
